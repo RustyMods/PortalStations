@@ -1,0 +1,8 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+PortalStations.sln.DotSettings.user
+.idea
+.vs
