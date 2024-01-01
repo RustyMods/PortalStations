@@ -39,7 +39,6 @@ public static class PersonalTeleportationGUI
         PersonalGUI.SetActive(true);
         GetDestinations(user, item, znv);
     }
-    
     private static void GetDestinations(Humanoid user, ItemDrop.ItemData deviceData, ZNetView znv)
     {
         foreach (Transform item in ItemListRoot) Object.Destroy(item.gameObject);
@@ -83,7 +82,6 @@ public static class PersonalTeleportationGUI
             });
         }
     }
-
     private static void TeleportToDestinationWithCost(ZDO zdo, int cost, Humanoid user, ItemDrop fuelItem)
     {
         if (!Player.m_localPlayer.IsTeleportable() && _TeleportAnything.Value is PortalStationsPlugin.Toggle.Off)
