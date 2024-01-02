@@ -7,18 +7,6 @@ namespace PortalStations.Stations;
 
 public static class PersonalTeleportationDevice
 {
-    private static PortalStationUser PortalUser = null!;
-    
-    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Awake))]
-    static class AddPersonalPortalComponent
-    {
-        private static void Postfix(Humanoid __instance)
-        {
-            if (!__instance) return;
-            PortalUser = __instance.gameObject.AddComponent<PortalStationUser>();
-        }
-    }
-
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UseItem))]
     static class UsePersonalPortalDevice
     {
@@ -29,9 +17,8 @@ public static class PersonalTeleportationDevice
             return false;
         }
     }
-
     public static int GetFuelAmount(Humanoid user, ItemDrop fuelItem) => user.GetInventory().CountItems(fuelItem.m_itemData.m_shared.m_name);
-
+    public static void ConsumeFuel(Player user, ItemDrop fuelItem, int amount) => user.GetInventory().RemoveItem(fuelItem.m_itemData.m_shared.m_name, amount, -1, false);
     public static int CalculateFuelCost(ItemDrop.ItemData deviceData, float distance)
     {
         if (_DeviceUseFuel.Value is Toggle.Off) return 0;
@@ -44,7 +31,7 @@ public static class PersonalTeleportationDevice
     private static void UseItem(Humanoid user, ItemDrop.ItemData item)
     {
         if (item.m_durability < item.m_shared.m_durabilityDrain) return;
-        PortalUser.Use(item);
+        PersonalTeleportationGUI.ShowPersonalPortalGUI(user, item);
     }
     
 }

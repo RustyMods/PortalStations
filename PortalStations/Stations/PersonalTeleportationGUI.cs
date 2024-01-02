@@ -12,7 +12,6 @@ public static class PersonalTeleportationGUI
     private static GameObject PersonalGUI = null!;
     private static GameObject PersonalGUI_Item = null!;
     private static RectTransform ItemListRoot = null!;
-    
     public static void InitGUI(InventoryGui instance)
     {
         if (!instance) return;
@@ -26,21 +25,30 @@ public static class PersonalTeleportationGUI
         if (!PersonalGUI.TryGetComponent(out RectTransform rootTransform)) return;
         rootTransform.SetParent(instance.transform, false);
         PersonalGUI.SetActive(false);
-        
-        Button closeButton = Utils.FindChild(PersonalGUI.transform, "$part_CloseButton").GetComponent<Button>();
+
+        ButtonSfx VanillaButtonSFX = instance.m_trophiesPanel.transform.Find("TrophiesFrame/Closebutton").GetComponent<ButtonSfx>();
+
+        Transform button = Utils.FindChild(PersonalGUI.transform, "$part_CloseButton");
+        Button closeButton = button.GetComponent<Button>();
         closeButton.onClick.AddListener(HidePersonalPortalGUI);
+        ButtonSfx closeButtonSfx = button.gameObject.AddComponent<ButtonSfx>();
+        closeButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
         
         Image vanillaBackground = instance.m_trophiesPanel.transform.Find("TrophiesFrame/border (1)").GetComponent<Image>();
         Image[] PortalStationImages = PersonalGUI.GetComponentsInChildren<Image>();
         foreach (Image image in PortalStationImages) image.material = vanillaBackground.material;
+
+        Transform teleportButton = Utils.FindChild(PersonalGUI_Item.transform, "$part_TeleportButton");
+        ButtonSfx teleportButtonSfx = teleportButton.gameObject.AddComponent<ButtonSfx>();
+        teleportButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
     }
 
-    public static void ShowPersonalPortalGUI(Humanoid user, ZNetView znv, ItemDrop.ItemData item)
+    public static void ShowPersonalPortalGUI(Humanoid user, ItemDrop.ItemData item)
     {
         PersonalGUI.SetActive(true);
-        GetDestinations(user, item, znv);
+        GetDestinations(user, item);
     }
-    private static void GetDestinations(Humanoid user, ItemDrop.ItemData deviceData, ZNetView znv)
+    private static void GetDestinations(Humanoid user, ItemDrop.ItemData deviceData)
     {
         foreach (Transform item in ItemListRoot) Object.Destroy(item.gameObject);
         if (!ZNetScene.instance) return;
@@ -87,7 +95,7 @@ public static class PersonalTeleportationGUI
 
         foreach (ZDO zdo in Destinations)
         {
-            if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) continue;
+            if (!zdo.IsValid()) continue;
             string name = zdo.GetString(PortalStation._prop_station_name);
             if (name.IsNullOrWhiteSpace()) continue;
             int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance(zdo.GetPosition(), user.transform.position));
@@ -115,26 +123,11 @@ public static class PersonalTeleportationGUI
             Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Not enough fuel");
             return;
         }
-        
+
+        if(!Player.m_localPlayer.NoCostCheat()) PersonalTeleportationDevice.ConsumeFuel(Player.m_localPlayer, fuelItem, cost);
         Player.m_localPlayer.TeleportTo(zdo.GetPosition() + new Vector3(0f,  PortalStationGUI.portal_exit_distance, 0f), zdo.GetRotation(), true);
         HidePersonalPortalGUI();
-    }
-    private static void TeleportToPeer(ZNetPeer peer, int cost, Humanoid user, ItemDrop fuelItem)
-    {
-        if (!Player.m_localPlayer.IsTeleportable() && _TeleportAnything.Value is PortalStationsPlugin.Toggle.Off)
-        {
-            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$msg_noteleport");
-            return;
-        }
-
-        int inventoryFuel = PersonalTeleportationDevice.GetFuelAmount(user, fuelItem);
-        if (inventoryFuel < cost && !Player.m_localPlayer.NoCostCheat())
-        {
-            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Not enough fuel");
-            return;
-        }
-        Player.m_localPlayer.TeleportTo(peer.GetRefPos() + new Vector3(0f,  PortalStationGUI.portal_exit_distance, 0f), user.transform.rotation, true);
-        HidePersonalPortalGUI();
+        
     }
     public static void HidePersonalPortalGUI() => PersonalGUI.SetActive(false);
     public static bool IsPersonalPortalGUIVisible() => PersonalGUI && PersonalGUI.activeSelf;

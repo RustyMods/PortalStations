@@ -7,7 +7,6 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 {
     public static readonly int _prop_station_name = "stationName".GetStableHashCode();
     private const float use_distance = 5.0f;
-    private static EffectFade Fade = null!;
     private ZNetView _znv = null!;
     private void Awake()
     {
@@ -18,19 +17,25 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 
         if (!_znv.IsOwner() || !Player.m_localPlayer) return;
         if (_znv.GetZDO().GetString(_prop_station_name).IsNullOrWhiteSpace()) _znv.GetZDO().Set(_prop_station_name, Player.m_localPlayer.GetPlayerName() + " Portal");
-        Fade = Utils.FindChild(transform, "Portal Effects").gameObject.AddComponent<EffectFade>();
-        Fade.m_fadeDuration = 1f;
-        Fade.SetActive(false);
-        InvokeRepeating(nameof(UpdatePortal), 0.5f, 0.5f);
     }
-    private void UpdatePortal()
+    private void FixedUpdate()
     {
         if (!_znv.IsValid()) return;
+        
         Player closestPlayer = Player.GetClosestPlayer(transform.position, use_distance);
         bool flag = closestPlayer && closestPlayer.IsTeleportable();
-        if (Fade.m_active != flag) Fade.SetActive(flag);
-    }
 
+        GameObject portalEffects = Utils.FindChild(transform, "Portal Effects").gameObject;
+        if (!portalEffects.TryGetComponent(out EffectFade fade))
+        {
+            EffectFade newFade = portalEffects.AddComponent<EffectFade>();
+            newFade.m_fadeDuration = 1f;
+            newFade.SetActive(flag);
+            return;
+        };
+        if (fade.m_active != flag) fade.SetActive(flag);
+        
+    }
     private void OnDestroy() => PortalStationGUI.HidePortalGUI();
     public bool Interact(Humanoid user, bool hold, bool alt)
     {

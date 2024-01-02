@@ -125,7 +125,6 @@
         <Compile Include="Stations\PersonalTeleportationGUI.cs" />
         <Compile Include="Stations\PortalStation.cs" />
         <Compile Include="Stations\PortalStationGUI.cs" />
-        <Compile Include="Stations\PortalStationUser.cs" />
         <Compile Include="Stations\SetData.cs" />
         <Compile Include="Stations\Stations.cs" />
         <Compile Include="VersionHandshake.cs" />

@@ -44,7 +44,7 @@ namespace PortalStations
             _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
 
             BuildPiece PortalStation = new("portal_station_assets", "portalstation");
-            PortalStation.Name.English("Portal Station");
+            PortalStation.Name.English("Ancient Portal");
             PortalStation.Description.English("Teleportation portal");
             PortalStation.RequiredItems.Add("Stone", 20, true);
             PortalStation.RequiredItems.Add("SurtlingCore", 2, true);
@@ -55,9 +55,11 @@ namespace PortalStations
             MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab.transform.Find("Visual Root").gameObject, MaterialReplacer.ShaderType.PieceShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStation.Prefab.transform, "vanilla_effects").gameObject);
             PortalStation.Prefab.AddComponent<PortalStation>();
+            PieceEffectsSetter.PrefabsToSet.Add(PortalStation.Prefab);
+            Stations.Stations.PrefabsToSearch.Add(PortalStation.Prefab.name);
             
             BuildPiece PortalStationOne = new("portal_station_assets", "portalStationOne");
-            PortalStationOne.Name.English("Portal Station");
+            PortalStationOne.Name.English("Chained Portal");
             PortalStationOne.Description.English("Teleportation portal");
             PortalStationOne.RequiredItems.Add("Stone", 20, true);
             PortalStationOne.RequiredItems.Add("SurtlingCore", 2, true);
@@ -65,10 +67,11 @@ namespace PortalStations
             PortalStationOne.RequiredItems.Add("GreydwarfEye", 10, true);
             PortalStationOne.Category.Set(BuildPieceCategory.Misc);
             PortalStationOne.Crafting.Set(CraftingTable.Workbench);
-            // MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStationOne.Prefab.transform.Find("new").gameObject, MaterialReplacer.ShaderType.PieceShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStationOne.Prefab.transform, "vanilla_effects").gameObject);
             PortalStationOne.Prefab.AddComponent<PortalStation>();
-
+            PieceEffectsSetter.PrefabsToSet.Add(PortalStationOne.Prefab);
+            Stations.Stations.PrefabsToSearch.Add(PortalStationOne.Prefab.name);
+            
             Item PersonalPortalDevice = new("portal_station_assets", "item_personalteleportationdevice");
             PersonalPortalDevice.Name.English("Portable Portal");
             PersonalPortalDevice.Description.English("Travel made easy");
@@ -86,7 +89,6 @@ namespace PortalStations
             PersonalPortalDevice.MaximumRequiredStationLevel = 2;
             PersonalPortalDevice.Configurable = Configurability.Recipe;
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PersonalPortalDevice.Prefab.transform, "SurtlingCores").gameObject);
-
             
             Stations.Stations.InitCoroutine();
             InitConfigs();
@@ -157,7 +159,7 @@ namespace PortalStations
             _TeleportAnything = config("Settings", "1 - Teleport Anything", Toggle.Off, "If on, portal station allows to teleport without restrictions");
             _DeviceUseFuel = config("Settings", "2 - Portable Portal Use Fuel", Toggle.On, "If on, personal teleportation device uses fuel");
             _DeviceFuel = config("Settings", "3 - Portable Portal Fuel", "SurtlingCore", "Set the prefab name of the fuel item required to teleport");
-            _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Use Fuel Amount", 1, new ConfigDescription("Amount of fuel consumed multiplied by distance", new AcceptableValueRange<int>(1, 50)));
+            _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<int>(1, 50)));
             _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<int>(1, 50)));
         }
 

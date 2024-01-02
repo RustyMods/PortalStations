@@ -29,12 +29,20 @@ public static class PortalStationGUI
         rootTransform.SetParent(instance.transform, false);
         PortalGUI.SetActive(false);
 
-        Button closeButton = Utils.FindChild(PortalGUI.transform, "$part_CloseButton").GetComponent<Button>();
+        ButtonSfx VanillaButtonSFX = instance.m_trophiesPanel.transform.Find("TrophiesFrame/Closebutton").GetComponent<ButtonSfx>();
+        Transform button = Utils.FindChild(PortalGUI.transform, "$part_CloseButton");
+        Button closeButton = button.GetComponent<Button>();
         closeButton.onClick.AddListener(HidePortalGUI);
+        ButtonSfx closeButtonSfx = button.gameObject.AddComponent<ButtonSfx>();
+        closeButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
         
         Image vanillaBackground = instance.m_trophiesPanel.transform.Find("TrophiesFrame/border (1)").GetComponent<Image>();
         Image[] PortalStationImages = PortalGUI.GetComponentsInChildren<Image>();
         foreach (Image image in PortalStationImages) image.material = vanillaBackground.material;
+
+        Transform teleportButton = Utils.FindChild(PortalGUI_Item.transform, "$part_TeleportButton");
+        ButtonSfx teleportButtonSfx = teleportButton.gameObject.AddComponent<ButtonSfx>();
+        teleportButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
     }
     public static bool ShowPortalGUI(ZNetView znv)
     {
@@ -58,6 +66,7 @@ public static class PortalStationGUI
         List<ZDO> Destinations = new();
         foreach (string prefab in Stations.PrefabsToSearch)
         {
+            if (prefab == "Player") continue;
             int amount = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(prefab, Destinations, ref amount))
             {
@@ -89,7 +98,11 @@ public static class PortalStationGUI
         HidePortalGUI();
         PersonalTeleportationGUI.HidePersonalPortalGUI();
     }
-    public static void HidePortalGUI() => PortalGUI.SetActive(false);
+
+    public static void HidePortalGUI()
+    {
+        if (PortalGUI) PortalGUI.SetActive(false);
+    } 
     public static bool IsPortalGUIVisible() => PortalGUI && PortalGUI.activeSelf;
     public static void UpdateGUI()
     {
