@@ -71,6 +71,7 @@ public static class PersonalTeleportationGUI
             if (!zdo.IsValid() || zdo.m_uid == user.GetZDOID()) continue;
             string name = zdo.GetString(ZDOVars.s_playerName);
             if (name.IsNullOrWhiteSpace()) continue;
+            if (name == Player.m_localPlayer.GetPlayerName()) continue;
             if (uniquePlayerNames.Contains(name)) continue;
             uniquePlayerNames.Add(name);
             int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance( zdo.GetPosition(), user.transform.position));
@@ -104,14 +105,14 @@ public static class PersonalTeleportationGUI
     {
         if (!Player.m_localPlayer.IsTeleportable() && _TeleportAnything.Value is PortalStationsPlugin.Toggle.Off)
         {
-            user.Message(MessageHud.MessageType.Center, "$msg_noteleport");
+            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return;
         }
 
         int inventoryFuel = PersonalTeleportationDevice.GetFuelAmount(user, fuelItem);
         if (inventoryFuel < cost && !Player.m_localPlayer.NoCostCheat())
         {
-            user.Message(MessageHud.MessageType.Center, "Not enough fuel");
+            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Not enough fuel");
             return;
         }
         
@@ -122,14 +123,14 @@ public static class PersonalTeleportationGUI
     {
         if (!Player.m_localPlayer.IsTeleportable() && _TeleportAnything.Value is PortalStationsPlugin.Toggle.Off)
         {
-            user.Message(MessageHud.MessageType.Center, "$msg_noteleport");
+            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return;
         }
 
         int inventoryFuel = PersonalTeleportationDevice.GetFuelAmount(user, fuelItem);
         if (inventoryFuel < cost && !Player.m_localPlayer.NoCostCheat())
         {
-            user.Message(MessageHud.MessageType.Center, "Not enough fuel");
+            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Not enough fuel");
             return;
         }
         Player.m_localPlayer.TeleportTo(peer.GetRefPos() + new Vector3(0f,  PortalStationGUI.portal_exit_distance, 0f), user.transform.rotation, true);
