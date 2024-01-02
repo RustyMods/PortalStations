@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "0.0.1";
+        internal const string ModVersion = "1.0.0";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -28,16 +28,11 @@ namespace PortalStations
         internal static string ConnectionError = "";
         private readonly Harmony _harmony = new(ModGUID);
         public static readonly ManualLogSource PortalStationsLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
-        private static readonly ConfigSync ConfigSync = new(ModGUID)
-            { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
+        private static readonly ConfigSync ConfigSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
         public static PortalStationsPlugin _plugin = null!;
         public static AssetBundle _asset = null!;
-        public enum Toggle
-        {
-            On = 1,
-            Off = 0
-        }
+        public enum Toggle { On = 1, Off = 0 }
 
         public void Awake()
         {
@@ -57,9 +52,22 @@ namespace PortalStations
             PortalStation.RequiredItems.Add("GreydwarfEye", 10, true);
             PortalStation.Category.Set(BuildPieceCategory.Misc);
             PortalStation.Crafting.Set(CraftingTable.Workbench);
-            MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab, MaterialReplacer.ShaderType.PieceShader);
+            MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab.transform.Find("Visual Root").gameObject, MaterialReplacer.ShaderType.PieceShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStation.Prefab.transform, "vanilla_effects").gameObject);
             PortalStation.Prefab.AddComponent<PortalStation>();
+            
+            BuildPiece PortalStationOne = new("portal_station_assets", "portalStationOne");
+            PortalStationOne.Name.English("Portal Station");
+            PortalStationOne.Description.English("Teleportation portal");
+            PortalStationOne.RequiredItems.Add("Stone", 20, true);
+            PortalStationOne.RequiredItems.Add("SurtlingCore", 2, true);
+            PortalStationOne.RequiredItems.Add("FineWood", 20, true);
+            PortalStationOne.RequiredItems.Add("GreydwarfEye", 10, true);
+            PortalStationOne.Category.Set(BuildPieceCategory.Misc);
+            PortalStationOne.Crafting.Set(CraftingTable.Workbench);
+            // MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStationOne.Prefab.transform.Find("new").gameObject, MaterialReplacer.ShaderType.PieceShader);
+            MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStationOne.Prefab.transform, "vanilla_effects").gameObject);
+            PortalStationOne.Prefab.AddComponent<PortalStation>();
 
             Item PersonalPortalDevice = new("portal_station_assets", "item_personalteleportationdevice");
             PersonalPortalDevice.Name.English("Portable Portal");
@@ -184,18 +192,18 @@ namespace PortalStations
             [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer = null!;
         }
 
-        class AcceptableShortcuts : AcceptableValueBase
-        {
-            public AcceptableShortcuts() : base(typeof(KeyboardShortcut))
-            {
-            }
-
-            public override object Clamp(object value) => value;
-            public override bool IsValid(object value) => true;
-
-            public override string ToDescriptionString() =>
-                "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
-        }
+        // class AcceptableShortcuts : AcceptableValueBase
+        // {
+        //     public AcceptableShortcuts() : base(typeof(KeyboardShortcut))
+        //     {
+        //     }
+        //
+        //     public override object Clamp(object value) => value;
+        //     public override bool IsValid(object value) => true;
+        //
+        //     public override string ToDescriptionString() =>
+        //         "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
+        // }
 
         #endregion
     }

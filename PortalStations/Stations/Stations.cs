@@ -7,9 +7,7 @@ namespace PortalStations.Stations;
 public static class Stations
 {
     private static readonly List<ZDO> TempZDOs = new();
-    public static readonly string PrefabToSearch = "portalstation";
-    public static string PlayerToSearch = "Player";
-
+    public static readonly List<string> PrefabsToSearch = new() { "portalstation", "portalStationOne", "Player" };
     public static void InitCoroutine() => PortalStationsPlugin._plugin.StartCoroutine(SendStationsToClient());
     private static IEnumerator SendStationsToClient()
     {
@@ -18,18 +16,19 @@ public static class Stations
             if (Game.instance && ZDOMan.instance != null && ZNet.instance && ZNet.instance.IsServer())
             {
                 TempZDOs.Clear();
-                int index = 0;
-                while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(PrefabToSearch, TempZDOs, ref index))
+                foreach (string prefab in PrefabsToSearch)
                 {
-                    yield return null;
+                    int index = 0;
+                    while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(prefab, TempZDOs, ref index))
+                    {
+                        yield return null;
+                    }
                 }
 
-                int playerIndex = 0;
-                while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(PlayerToSearch, TempZDOs, ref playerIndex))
+                foreach (ZDO zdo in TempZDOs)
                 {
-                    yield return null;
+                    ZDOMan.instance.ForceSendZDO(zdo.m_uid);
                 }
-                foreach (ZDO zdo in TempZDOs) ZDOMan.instance.ForceSendZDO(zdo.m_uid);
             }
             yield return new WaitForSeconds(10f);
         }

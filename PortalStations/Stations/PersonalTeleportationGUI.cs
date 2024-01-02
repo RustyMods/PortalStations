@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using BepInEx;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -49,31 +50,48 @@ public static class PersonalTeleportationGUI
         
         // Get all portal stations
         List<ZDO> Destinations = new();
-        int amount = 0;
-        while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(Stations.PrefabToSearch, Destinations, ref amount))
+        foreach (string prefab in Stations.PrefabsToSearch)
+        {
+            int amount = 0;
+            while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(prefab, Destinations, ref amount))
+            {
+            }
+        }
+
+        List<ZDO> Players = new();
+        int playerCount = 0;
+        while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative("Player", Players, ref playerCount))
         {
         }
 
-        foreach (ZNetPeer peer in ZNet.instance.GetPeers())
+        HashSet<string> uniquePlayerNames = new();
+
+        foreach (ZDO zdo in Players)
         {
-            int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance( peer.GetRefPos(), user.transform.position));
+            if (!zdo.IsValid() || zdo.m_uid == user.GetZDOID()) continue;
+            string name = zdo.GetString(ZDOVars.s_playerName);
+            if (name.IsNullOrWhiteSpace()) continue;
+            if (uniquePlayerNames.Contains(name)) continue;
+            uniquePlayerNames.Add(name);
+            int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance( zdo.GetPosition(), user.transform.position));
             GameObject item = Object.Instantiate(PersonalGUI_Item, ItemListRoot);
-            Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = peer.m_playerName;
+            Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
             Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = itemDrop.m_itemData.GetIcon();
             Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
             Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
             {
-                TeleportToPeer(peer, cost, user, itemDrop);
+                TeleportToDestinationWithCost(zdo, cost, user, itemDrop);
             });
         }
 
         foreach (ZDO zdo in Destinations)
         {
             if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) continue;
+            string name = zdo.GetString(PortalStation._prop_station_name);
+            if (name.IsNullOrWhiteSpace()) continue;
             int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance(zdo.GetPosition(), user.transform.position));
-            
             GameObject item = Object.Instantiate(PersonalGUI_Item, ItemListRoot);
-            Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = zdo.GetString(PortalStation._prop_station_name);
+            Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
             Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = itemDrop.m_itemData.GetIcon();
             Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
             Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
@@ -96,7 +114,8 @@ public static class PersonalTeleportationGUI
             user.Message(MessageHud.MessageType.Center, "Not enough fuel");
             return;
         }
-        user.TeleportTo(zdo.GetPosition() + new Vector3(0f,  PortalStationGUI.portal_exit_distance, 0f), zdo.GetRotation(), true);
+        
+        Player.m_localPlayer.TeleportTo(zdo.GetPosition() + new Vector3(0f,  PortalStationGUI.portal_exit_distance, 0f), zdo.GetRotation(), true);
         HidePersonalPortalGUI();
     }
     private static void TeleportToPeer(ZNetPeer peer, int cost, Humanoid user, ItemDrop fuelItem)
@@ -113,7 +132,7 @@ public static class PersonalTeleportationGUI
             user.Message(MessageHud.MessageType.Center, "Not enough fuel");
             return;
         }
-        user.TeleportTo(peer.GetRefPos() + new Vector3(0f,  PortalStationGUI.portal_exit_distance, 0f), user.transform.rotation, true);
+        Player.m_localPlayer.TeleportTo(peer.GetRefPos() + new Vector3(0f,  PortalStationGUI.portal_exit_distance, 0f), user.transform.rotation, true);
         HidePersonalPortalGUI();
     }
     public static void HidePersonalPortalGUI() => PersonalGUI.SetActive(false);

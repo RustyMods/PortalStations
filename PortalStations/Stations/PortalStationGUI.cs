@@ -15,7 +15,6 @@ public static class PortalStationGUI
     private static RectTransform ItemListRoot = null!;
     private static ZNetView currentPortalStation = null!;
     public const float portal_exit_distance = 1.0f;
-
     public static void InitGUI(InventoryGui instance)
     {
         if (!instance) return;
@@ -37,7 +36,6 @@ public static class PortalStationGUI
         Image[] PortalStationImages = PortalGUI.GetComponentsInChildren<Image>();
         foreach (Image image in PortalStationImages) image.material = vanillaBackground.material;
     }
-
     public static bool ShowPortalGUI(ZNetView znv)
     {
         znv.ClaimOwnership();
@@ -51,7 +49,6 @@ public static class PortalStationGUI
 
         return true;
     }
-
     private static void FilterDestinations(string value) => GetDestinations(currentPortalStation, value);
     private static void GetDestinations(ZNetView znv, string filter = "")
     {
@@ -59,25 +56,28 @@ public static class PortalStationGUI
         foreach (Transform item in ItemListRoot) Object.Destroy(item.gameObject);
         // Get all portal stations
         List<ZDO> Destinations = new();
-        int amount = 0;
-        while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(Stations.PrefabToSearch, Destinations, ref amount))
+        foreach (string prefab in Stations.PrefabsToSearch)
         {
+            int amount = 0;
+            while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(prefab, Destinations, ref amount))
+            {
+            }
         }
         foreach (ZDO zdo in Destinations)
         {
             if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) continue;
             string name = zdo.GetString(PortalStation._prop_station_name);
+            if (name.IsNullOrWhiteSpace()) continue;
             if (filter.IsNullOrWhiteSpace() || name.Contains(filter))
             {
                 GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
                 Text stationName = Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>();
-                stationName.text = name.IsNullOrWhiteSpace() ? "Unknown Portal" : name;
+                stationName.text = name;
                 Button teleportButton = Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>();
                 teleportButton.onClick.AddListener(() => { TeleportToDestination(zdo); });
             }
         }
     }
-
     private static void TeleportToDestination(ZDO zdo)
     {
         if (!Player.m_localPlayer.IsTeleportable() && _TeleportAnything.Value is PortalStationsPlugin.Toggle.Off)
