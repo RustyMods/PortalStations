@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using BepInEx;
-using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
 using static PortalStations.PortalStationsPlugin;
@@ -80,8 +79,7 @@ public static class PortalStationGUI
             if (filter.IsNullOrWhiteSpace() || name.Contains(filter))
             {
                 GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
-                Text stationName = Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>();
-                stationName.text = name;
+                Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
                 Button teleportButton = Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>();
                 teleportButton.onClick.AddListener(() => { TeleportToDestination(zdo); });
             }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 using static PortalStations.PortalStationsPlugin;
 
 namespace PortalStations.Stations;
@@ -31,15 +32,23 @@ public static class Teleportation
         if (_TeleportAnything.Value is Toggle.On) return true;
         if (!player.IsTeleportable())
         {
-            if (_UsePortalKeys.Value is Toggle.Off) return false;
-            Inventory inventory = player.GetInventory();
-            List<string> keys = ZoneSystem.instance.GetGlobalKeys();
-            foreach (ItemDrop.ItemData itemData in inventory.m_inventory)
+            return _UsePortalKeys.Value is Toggle.On && CheckInventory(player.GetInventory());
+        }
+        return true;
+    }
+
+    private static bool CheckInventory(Inventory inventory)
+    {
+        List<string> keys = ZoneSystem.instance.GetGlobalKeys();
+        foreach (ItemDrop.ItemData itemData in inventory.m_inventory)
+        {
+            if (!OreKeys.TryGetValue(itemData.m_shared.m_name, out string key))
             {
-                if (!OreKeys.TryGetValue(itemData.m_shared.m_name, out string key)) continue;
-                if (!keys.Contains(key)) return false ;
-            }
-            return true;
+                // If item is not part of dictionary,
+                // check if it is teleportable
+                if (!itemData.m_shared.m_teleportable) return false;
+            };
+            if (!keys.Contains(key)) return false ;
         }
         return true;
     }
