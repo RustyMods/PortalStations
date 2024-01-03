@@ -23,7 +23,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         if (!_znv.IsValid()) return;
         
         Player closestPlayer = Player.GetClosestPlayer(transform.position, use_distance);
-        bool flag = closestPlayer && closestPlayer.IsTeleportable();
+        bool flag = closestPlayer && Teleportation.IsTeleportable(closestPlayer);
 
         GameObject portalEffects = Utils.FindChild(transform, "Portal Effects").gameObject;
         if (!portalEffects.TryGetComponent(out EffectFade fade))

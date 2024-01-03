@@ -89,7 +89,7 @@ public static class PortalStationGUI
     }
     private static void TeleportToDestination(ZDO zdo)
     {
-        if (!Player.m_localPlayer.IsTeleportable() && _TeleportAnything.Value is PortalStationsPlugin.Toggle.Off)
+        if (!Teleportation.IsTeleportable(Player.m_localPlayer))
         {
             Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return;
@@ -98,7 +98,6 @@ public static class PortalStationGUI
         HidePortalGUI();
         PersonalTeleportationGUI.HidePersonalPortalGUI();
     }
-
     public static void HidePortalGUI()
     {
         if (PortalGUI) PortalGUI.SetActive(false);

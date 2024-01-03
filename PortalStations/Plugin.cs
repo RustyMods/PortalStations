@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.0.0";
+        internal const string ModVersion = "1.0.1";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -43,6 +43,18 @@ namespace PortalStations
                 "If on, the configuration is locked and can be changed by server admins only.");
             _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
 
+            InitPieces();
+            InitItems();
+            InitConfigs();
+            Stations.Stations.InitCoroutine();
+            
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            _harmony.PatchAll(assembly);
+            SetupWatcher();
+        }
+
+        private void InitPieces()
+        {
             BuildPiece PortalStation = new("portal_station_assets", "portalstation");
             PortalStation.Name.English("Ancient Portal");
             PortalStation.Description.English("Teleportation portal");
@@ -71,7 +83,9 @@ namespace PortalStations
             PortalStationOne.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(PortalStationOne.Prefab);
             Stations.Stations.PrefabsToSearch.Add(PortalStationOne.Prefab.name);
-            
+        }
+        private void InitItems()
+        {
             Item PersonalPortalDevice = new("portal_station_assets", "item_personalteleportationdevice");
             PersonalPortalDevice.Name.English("Portable Portal");
             PersonalPortalDevice.Description.English("Travel made easy");
@@ -89,26 +103,17 @@ namespace PortalStations
             PersonalPortalDevice.MaximumRequiredStationLevel = 2;
             PersonalPortalDevice.Configurable = Configurability.Recipe;
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PersonalPortalDevice.Prefab.transform, "SurtlingCores").gameObject);
-            
-            Stations.Stations.InitCoroutine();
-            InitConfigs();
-            
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            _harmony.PatchAll(assembly);
-            SetupWatcher();
-        }
 
+        }
         private void Update()
         {
             PortalStationGUI.UpdateGUI();
             PersonalTeleportationGUI.UpdatePersonalGUI();
         }
-
         private void OnDestroy()
         {
             Config.Save();
         }
-
         private static AssetBundle GetAssetBundle(string fileName)
         {
             Assembly execAssembly = Assembly.GetExecutingAssembly();
@@ -116,7 +121,6 @@ namespace PortalStations
             using Stream? stream = execAssembly.GetManifestResourceStream(resourceName);
             return AssetBundle.LoadFromStream(stream);
         }
-
         private void SetupWatcher()
         {
             FileSystemWatcher watcher = new(Paths.ConfigPath, ConfigFileName);
@@ -127,7 +131,6 @@ namespace PortalStations
             watcher.SynchronizingObject = ThreadingHelper.SynchronizingObject;
             watcher.EnableRaisingEvents = true;
         }
-
         private void ReadConfigValues(object sender, FileSystemEventArgs e)
         {
             if (!File.Exists(ConfigFileFullPath)) return;
@@ -142,8 +145,7 @@ namespace PortalStations
                 PortalStationsLogger.LogError("Please check your config entries for spelling and format!");
             }
         }
-
-
+        
         #region ConfigOptions
 
         private static ConfigEntry<Toggle> _serverConfigLocked = null!;
@@ -154,6 +156,17 @@ namespace PortalStations
         public static ConfigEntry<int> _DevicePerFuelAmount = null!;
         public static ConfigEntry<int> _DeviceAdditionalDistancePerUpgrade = null!;
 
+        public static ConfigEntry<string> _TinKey = null!;
+        public static ConfigEntry<string> _CopperKey = null!;
+        public static ConfigEntry<string> _BronzeKey = null!;
+        public static ConfigEntry<string> _IronKey = null!;
+        public static ConfigEntry<string> _SilverKey = null!;
+        public static ConfigEntry<string> _BlackMetalKey = null!;
+        public static ConfigEntry<string> _DragonEggKey = null!;
+        public static ConfigEntry<string> _DvergerNeedleKey = null!;
+        public static ConfigEntry<string> _FlameMetalKey = null!;
+
+        public static ConfigEntry<Toggle> _UsePortalKeys = null!;
         private void InitConfigs()
         {
             _TeleportAnything = config("Settings", "1 - Teleport Anything", Toggle.Off, "If on, portal station allows to teleport without restrictions");
@@ -161,6 +174,19 @@ namespace PortalStations
             _DeviceFuel = config("Settings", "3 - Portable Portal Fuel", "SurtlingCore", "Set the prefab name of the fuel item required to teleport");
             _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<int>(1, 50)));
             _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<int>(1, 50)));
+
+            _TinKey = config("Teleport Keys", "1 - Tin", "defeated_gdking", "Set the defeat key necessary to teleport ore");
+            _CopperKey = config("Teleport Keys", "2 - Copper", "defeated_gdking", "Set the defeat key necessary to teleport ore");
+            _BronzeKey = config("Teleport Keys", "3 - Bronze", "defeated_bonemass", "Set the defeat key necessary to teleport ore");
+            _IronKey = config("Teleport Keys", "4 - Iron", "defeated_bonemass", "Set the defeat key necessary to teleport ore");
+            _SilverKey = config("Teleport Keys", "5 - Silver", "defeated_dragon", "Set the defeat key necessary to teleport ore");
+            _DragonEggKey = config("Teleport Keys", "6 - Dragon Egg", "defeated_goblinking", "Set the defeat key necessary to teleport ore");
+            _BlackMetalKey = config("Teleport Keys", "7 - BlackMetal", "defeated_queen", "Set the defeat key necessary to teleport ore");
+            _DvergerNeedleKey = config("Teleport Keys", "8 - Dverger Needle", "defeated_queen", "Set the defeat key necessary to teleport needle");
+            _FlameMetalKey = config("Teleport Keys", "9 - Flametal", "defeated_queen", "Set the defeat key necessary to teleport ore");
+
+            _UsePortalKeys = config("Teleport Keys", "0 - Use Keys", Toggle.Off,
+                "If on, portal checks keys to portal player if carrying ores, dragon eggs, etc...");
         }
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,
