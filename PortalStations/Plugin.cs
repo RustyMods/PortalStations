@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.0.1";
+        internal const string ModVersion = "1.0.3";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -83,6 +83,36 @@ namespace PortalStations
             PortalStationOne.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(PortalStationOne.Prefab);
             Stations.Stations.PrefabsToSearch.Add(PortalStationOne.Prefab.name);
+            
+            BuildPiece portalPlatform = new("portal_station_assets", "portalPlatform");
+            portalPlatform.Name.English("Platform Portal");
+            portalPlatform.Description.English("Teleportation portal");
+            portalPlatform.RequiredItems.Add("Stone", 20, true);
+            portalPlatform.RequiredItems.Add("SurtlingCore", 2, true);
+            portalPlatform.RequiredItems.Add("FineWood", 20, true);
+            portalPlatform.RequiredItems.Add("GreydwarfEye", 10, true);
+            portalPlatform.Category.Set(BuildPieceCategory.Misc);
+            portalPlatform.Crafting.Set(CraftingTable.Workbench);
+            MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalPlatform.Prefab.transform, "model").gameObject);
+            MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalPlatform.Prefab.transform, "vanilla_effects").gameObject);
+            portalPlatform.Prefab.AddComponent<PortalStation>();
+            PieceEffectsSetter.PrefabsToSet.Add(portalPlatform.Prefab);
+            Stations.Stations.PrefabsToSearch.Add(portalPlatform.Prefab.name);
+            
+            BuildPiece portalStationDoor = new("portal_station_assets", "portalStationDoor");
+            portalStationDoor.Name.English("Gate Portal");
+            portalStationDoor.Description.English("Teleportation portal");
+            portalStationDoor.RequiredItems.Add("Stone", 20, true);
+            portalStationDoor.RequiredItems.Add("SurtlingCore", 2, true);
+            portalStationDoor.RequiredItems.Add("FineWood", 20, true);
+            portalStationDoor.RequiredItems.Add("GreydwarfEye", 10, true);
+            portalStationDoor.Category.Set(BuildPieceCategory.Misc);
+            portalStationDoor.Crafting.Set(CraftingTable.Workbench);
+            MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalStationDoor.Prefab.transform, "model").gameObject);
+            MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalStationDoor.Prefab.transform, "vanilla_effects").gameObject);
+            portalStationDoor.Prefab.AddComponent<PortalStation>();
+            PieceEffectsSetter.PrefabsToSet.Add(portalStationDoor.Prefab);
+            Stations.Stations.PrefabsToSearch.Add(portalStationDoor.Prefab.name);
         }
         private void InitItems()
         {
@@ -155,6 +185,7 @@ namespace PortalStations
         public static ConfigEntry<Toggle> _DeviceUseFuel = null!;
         public static ConfigEntry<int> _DevicePerFuelAmount = null!;
         public static ConfigEntry<int> _DeviceAdditionalDistancePerUpgrade = null!;
+        public static ConfigEntry<Toggle> _PortalToPlayers = null!;
 
         public static ConfigEntry<string> _TinKey = null!;
         public static ConfigEntry<string> _CopperKey = null!;
@@ -174,7 +205,8 @@ namespace PortalStations
             _DeviceFuel = config("Settings", "3 - Portable Portal Fuel", "SurtlingCore", "Set the prefab name of the fuel item required to teleport");
             _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<int>(1, 50)));
             _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<int>(1, 50)));
-
+            _PortalToPlayers = config("Settings", "6 - Portable Portal To Players", Toggle.On, "If on, portable portal shows players as destination options");
+            
             _TinKey = config("Teleport Keys", "1 - Tin", "defeated_gdking", "Set the defeat key necessary to teleport ore");
             _CopperKey = config("Teleport Keys", "2 - Copper", "defeated_gdking", "Set the defeat key necessary to teleport ore");
             _BronzeKey = config("Teleport Keys", "3 - Bronze", "defeated_bonemass", "Set the defeat key necessary to teleport ore");
@@ -185,8 +217,7 @@ namespace PortalStations
             _DvergerNeedleKey = config("Teleport Keys", "8 - Dverger Needle", "defeated_queen", "Set the defeat key necessary to teleport needle");
             _FlameMetalKey = config("Teleport Keys", "9 - Flametal", "defeated_queen", "Set the defeat key necessary to teleport ore");
 
-            _UsePortalKeys = config("Teleport Keys", "0 - Use Keys", Toggle.Off,
-                "If on, portal checks keys to portal player if carrying ores, dragon eggs, etc...");
+            _UsePortalKeys = config("Teleport Keys", "0 - Use Keys", Toggle.Off, "If on, portal checks keys to portal player if carrying ores, dragon eggs, etc...");
         }
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,

@@ -6,27 +6,23 @@ namespace PortalStations.Stations;
 
 public static class Teleportation
 {
-    private static readonly Dictionary<string, string> OreKeys = new()
+    private static string GetTeleportKey(string itemName)
     {
-        {"$item_tinore", _TinKey.Value},
-        {"$item_tin",_TinKey.Value},
-        {"$item_copperore", _CopperKey.Value},
-        {"$item_copperscrap",_CopperKey.Value},
-        {"$item_copper",_CopperKey.Value},
-        {"$item_bronze",_BronzeKey.Value},
-        {"$item_bronzescrap",_BronzeKey.Value},
-        {"$item_iron",_IronKey.Value},
-        {"$item_ironore",_IronKey.Value},
-        {"$item_ironscrap",_IronKey.Value},
-        {"$item_silver",_SilverKey.Value},
-        {"$item_silverore",_SilverKey.Value},
-        {"$item_blackmetalscrap",_BlackMetalKey.Value},
-        {"$item_blackmetal",_BlackMetalKey.Value},
-        {"$item_dragonegg",_DragonEggKey.Value},
-        {"$item_dvergrneedle",_DvergerNeedleKey.Value},
-        {"$item_flametal",_FlameMetalKey.Value},
-        {"$item_flametalore",_FlameMetalKey.Value}
-    };
+        switch (itemName)
+        {
+            case "$item_tinore" or "$item_tin": return _TinKey.Value;
+            case "$item_copperore" or "$item_copperscrap" or "$item_copper": return _CopperKey.Value;
+            case "$item_bronze" or "$item_bronzescrap": return _BronzeKey.Value;
+            case "$item_iron" or "$item_ironore" or "$item_ironscrap": return _IronKey.Value;
+            case "$item_silver" or "$item_silverore": return _SilverKey.Value;
+            case "$item_blackmetalscrap" or "$item_blackmetal": return _BlackMetalKey.Value;
+            case "$item_dragonegg": return _DragonEggKey.Value;
+            case "$item_dvergrneedle": return _DvergerNeedleKey.Value;
+            case "$item_flametal" or "$item_flametalore": return _FlameMetalKey.Value;
+            default: return "none";
+        }
+    }
+
     public static bool IsTeleportable(Player player)
     {
         if (_TeleportAnything.Value is Toggle.On) return true;
@@ -42,13 +38,13 @@ public static class Teleportation
         List<string> keys = ZoneSystem.instance.GetGlobalKeys();
         foreach (ItemDrop.ItemData itemData in inventory.m_inventory)
         {
-            if (!OreKeys.TryGetValue(itemData.m_shared.m_name, out string key))
+            string key = GetTeleportKey(itemData.m_shared.m_name);
+            if (key == "none")
             {
-                // If item is not part of dictionary,
-                // check if it is teleportable
                 if (!itemData.m_shared.m_teleportable) return false;
-            };
-            if (!keys.Contains(key)) return false ;
+                continue;
+            }
+            if (!keys.Contains(key)) return false;
         }
         return true;
     }

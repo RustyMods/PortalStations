@@ -7,6 +7,8 @@ namespace PortalStations.Stations;
 
 public static class PersonalTeleportationDevice
 {
+    private const float _durabilityDrain = 10f;
+    
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UseItem))]
     static class UsePersonalPortalDevice
     {
@@ -31,6 +33,7 @@ public static class PersonalTeleportationDevice
     private static void UseItem(Humanoid user, ItemDrop.ItemData item)
     {
         if (item.m_durability < item.m_shared.m_durabilityDrain) return;
+        item.m_durability -= _durabilityDrain;
         PersonalTeleportationGUI.ShowPersonalPortalGUI(user, item);
     }
     

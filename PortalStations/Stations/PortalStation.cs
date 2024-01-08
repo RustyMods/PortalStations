@@ -8,6 +8,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
     public static readonly int _prop_station_name = "stationName".GetStableHashCode();
     private const float use_distance = 5.0f;
     private ZNetView _znv = null!;
+    private static Transform? emissive;
     private void Awake()
     {
         _znv = GetComponent<ZNetView>();
@@ -17,6 +18,9 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 
         if (!_znv.IsOwner() || !Player.m_localPlayer) return;
         if (_znv.GetZDO().GetString(_prop_station_name).IsNullOrWhiteSpace()) _znv.GetZDO().Set(_prop_station_name, Player.m_localPlayer.GetPlayerName() + " Portal");
+        
+        emissive = Utils.FindChild(transform, "emissive");
+        if (emissive) emissive.gameObject.SetActive(false);
     }
     private void FixedUpdate()
     {
@@ -33,6 +37,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
             return;
         };
         if (fade.m_active != flag) fade.SetActive(flag);
+        if (emissive != null) emissive.gameObject.SetActive(flag);
     }
     private void OnDestroy() => PortalStationGUI.HidePortalGUI();
     public bool Interact(Humanoid user, bool hold, bool alt)
@@ -40,7 +45,6 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         if (hold) return false;
         if (alt)
         {
-            if (!GetComponent<Piece>().IsCreator()) return false;
             TextInput.instance.RequestText(this, "Rename Portal", 40);
             return true;
         }
@@ -54,8 +58,13 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
     private string GetStationName() => _znv.GetZDO().GetString(_prop_station_name);
     private bool InUseDistance(Humanoid human) => Vector3.Distance(human.transform.position, transform.position) <= use_distance;
     public bool UseItem(Humanoid user, ItemDrop.ItemData item) => false;
-    public string GetHoverText() => Localization.instance.Localize("[<color=yellow><b>$KEY_Use</b></color>] Use station") + "\n" +
-                                    Localization.instance.Localize("[<color=yellow><b>L.Shift + $KEY_Use</b></color>] Set Name");
+
+    public string GetHoverText()
+    {
+        return Localization.instance.Localize("[<color=yellow><b>$KEY_Use</b></color>] Use portal")
+               + "\n"
+               + Localization.instance.Localize("[<color=yellow><b>L.Shift + $KEY_Use</b></color>] Set Name");
+    } 
     public string GetHoverName() => "";
     public string GetText() => !_znv.IsValid() ? "" : _znv.GetZDO().GetString(_prop_station_name);
     public void SetText(string text)

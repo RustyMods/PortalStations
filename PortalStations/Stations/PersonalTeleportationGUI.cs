@@ -66,33 +66,36 @@ public static class PersonalTeleportationGUI
             }
         }
 
-        List<ZDO> Players = new();
-        int playerCount = 0;
-        while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative("Player", Players, ref playerCount))
+        if (_PortalToPlayers.Value is PortalStationsPlugin.Toggle.On)
         {
-        }
-
-        HashSet<string> uniquePlayerNames = new();
-
-        foreach (ZDO zdo in Players)
-        {
-            if (!zdo.IsValid() || zdo.m_uid == user.GetZDOID()) continue;
-            string name = zdo.GetString(ZDOVars.s_playerName);
-            if (name.IsNullOrWhiteSpace()) continue;
-            if (name == Player.m_localPlayer.GetPlayerName()) continue;
-            if (uniquePlayerNames.Contains(name)) continue;
-            uniquePlayerNames.Add(name);
-            int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance( zdo.GetPosition(), user.transform.position));
-            GameObject item = Object.Instantiate(PersonalGUI_Item, ItemListRoot);
-            Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
-            Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = itemDrop.m_itemData.GetIcon();
-            Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
-            Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
+            List<ZDO> Players = new();
+            int playerCount = 0;
+            while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative("Player", Players, ref playerCount))
             {
-                TeleportToDestinationWithCost(zdo, cost, user, itemDrop);
-            });
-        }
+            }
 
+            HashSet<string> uniquePlayerNames = new();
+
+            foreach (ZDO zdo in Players)
+            {
+                if (!zdo.IsValid() || zdo.m_uid == user.GetZDOID()) continue;
+                string name = zdo.GetString(ZDOVars.s_playerName);
+                if (name.IsNullOrWhiteSpace()) continue;
+                if (name == Player.m_localPlayer.GetPlayerName()) continue;
+                if (uniquePlayerNames.Contains(name)) continue;
+                uniquePlayerNames.Add(name);
+                int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance( zdo.GetPosition(), user.transform.position));
+                GameObject item = Object.Instantiate(PersonalGUI_Item, ItemListRoot);
+                Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
+                Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = itemDrop.m_itemData.GetIcon();
+                Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
+                Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
+                {
+                    TeleportToDestinationWithCost(zdo, cost, user, itemDrop);
+                });
+            }
+        }
+        
         foreach (ZDO zdo in Destinations)
         {
             if (!zdo.IsValid()) continue;

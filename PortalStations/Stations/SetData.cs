@@ -7,22 +7,55 @@ namespace PortalStations.Stations;
 public static class PieceEffectsSetter
 {
     public static readonly List<GameObject> PrefabsToSet = new();
+    
     [HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
-    static class AddBuildEffects
+    static class ZNetSceneAwakePatch
     {
-        private static void Postfix(ZNetScene __instance)
+        private static void Postfix(ZNetScene __instance) => AddEffects(__instance);
+    }
+
+    private static void AddEffects(ZNetScene __instance)
+    {
+        if (!__instance) return;
+        foreach (GameObject prefab in PrefabsToSet)
         {
-            if (!__instance) return;
-            foreach (GameObject prefab in PrefabsToSet)
-            {
-                GameObject SceneObject = __instance.GetPrefab(prefab.name);
-                SetWearNTearScript(__instance, SceneObject,
-                    "vfx_RockHit", "sfx_rock_destroyed",
-                    "vfx_RockHit", "sfx_rock_hit",
-                    "vfx_Place_throne02", 0f);
-                SetPieceScript(__instance, SceneObject, "vfx_Place_stone_wall_2x1", "sfx_build_hammer_stone");
-            }
+            GameObject SceneObject = __instance.GetPrefab(prefab.name);
+            SetWearNTearScript(__instance, SceneObject,
+                "vfx_RockHit", "sfx_rock_destroyed",
+                "vfx_RockHit", "sfx_rock_hit",
+                "vfx_Place_throne02", 0f);
+            SetPieceScript(__instance, SceneObject, "vfx_Place_stone_wall_2x1", "sfx_build_hammer_stone");
+            AddSFX(__instance, prefab);
         }
+    }
+
+    private static void AddSFX(ZNetScene scene, GameObject prefab)
+    {
+        GameObject VanillaPortal = scene.GetPrefab("portal_wood");
+        Transform SFX = Utils.FindChild(VanillaPortal.transform, "SFX");
+        if (!SFX) return;
+        if (!SFX.TryGetComponent(out AudioSource source)) return;
+        Transform newSFX = Utils.FindChild(prefab.transform, "SFX");
+        if (!newSFX) return;
+        AudioSource newSource = newSFX.gameObject.AddComponent<AudioSource>();
+        newSource.clip = source.clip;
+        newSource.outputAudioMixerGroup = source.outputAudioMixerGroup;
+        newSource.mute = source.mute;
+        newSource.bypassEffects = source.bypassEffects;
+        newSource.bypassReverbZones = source.bypassReverbZones;
+        newSource.playOnAwake = source.playOnAwake;
+        newSource.loop = source.loop;
+        newSource.priority = source.priority;
+        newSource.volume = source.volume;
+        newSource.pitch = source.pitch;
+        newSource.panStereo = source.panStereo;
+        newSource.spatialBlend = source.spatialBlend;
+        newSource.reverbZoneMix = source.reverbZoneMix;
+        newSource.dopplerLevel = source.dopplerLevel;
+        newSource.spread = source.spread;
+        newSource.rolloffMode = source.rolloffMode;
+        newSource.minDistance = source.minDistance;
+        newSource.maxDistance = source.maxDistance;
     }
     private static void SetWearNTearScript(ZNetScene scene, GameObject prefab, string destroyedEffectName1, string destroyEffectName2, string hitEffectName1, string hitEffectName2, string switchEffectName, float health)
     {
