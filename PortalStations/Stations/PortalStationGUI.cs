@@ -34,6 +34,8 @@ public static class PortalStationGUI
         closeButton.onClick.AddListener(HidePortalGUI);
         ButtonSfx closeButtonSfx = button.gameObject.AddComponent<ButtonSfx>();
         closeButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        button.Find("Text").GetComponent<Text>().text = _StationCloseText.Value;
+
         
         Image vanillaBackground = instance.m_trophiesPanel.transform.Find("TrophiesFrame/border (1)").GetComponent<Image>();
         Image[] PortalStationImages = PortalGUI.GetComponentsInChildren<Image>();
@@ -42,6 +44,10 @@ public static class PortalStationGUI
         Transform teleportButton = Utils.FindChild(PortalGUI_Item.transform, "$part_TeleportButton");
         ButtonSfx teleportButtonSfx = teleportButton.gameObject.AddComponent<ButtonSfx>();
         teleportButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        
+        Utils.FindChild(PortalGUI.transform, "Header").Find("Text").GetComponent<Text>().text = _StationTitle.Value;
+        Utils.FindChild(PortalGUI.transform, "Header (2)").Find("Text").GetComponent<Text>().text = _StationFilterText.Value;
+        Utils.FindChild(PortalGUI.transform, "Header (1)").Find("Text").GetComponent<Text>().text = _StationDestinationText.Value;
     }
     public static bool ShowPortalGUI(ZNetView znv)
     {
@@ -76,7 +82,7 @@ public static class PortalStationGUI
             if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) continue;
             string name = zdo.GetString(PortalStation._prop_station_name);
             if (name.IsNullOrWhiteSpace()) continue;
-            if (filter.IsNullOrWhiteSpace() || name.Contains(filter))
+            if (filter.IsNullOrWhiteSpace() || name.ToLower().Contains(filter.ToLower()))
             {
                 GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
                 Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;

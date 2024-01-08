@@ -14,7 +14,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace ItemManager;
+namespace PortalStations.Managers;
 
 [PublicAPI]
 public enum CraftingTable

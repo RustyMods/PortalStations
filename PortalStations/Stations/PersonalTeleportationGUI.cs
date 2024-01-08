@@ -33,6 +33,7 @@ public static class PersonalTeleportationGUI
         closeButton.onClick.AddListener(HidePersonalPortalGUI);
         ButtonSfx closeButtonSfx = button.gameObject.AddComponent<ButtonSfx>();
         closeButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        button.Find("Text").GetComponent<Text>().text = _StationCloseText.Value;
         
         Image vanillaBackground = instance.m_trophiesPanel.transform.Find("TrophiesFrame/border (1)").GetComponent<Image>();
         Image[] PortalStationImages = PersonalGUI.GetComponentsInChildren<Image>();
@@ -41,6 +42,9 @@ public static class PersonalTeleportationGUI
         Transform teleportButton = Utils.FindChild(PersonalGUI_Item.transform, "$part_TeleportButton");
         ButtonSfx teleportButtonSfx = teleportButton.gameObject.AddComponent<ButtonSfx>();
         teleportButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+
+        Utils.FindChild(PersonalGUI.transform, "Header").Find("Text").GetComponent<Text>().text = _PortableStationTitle.Value;
+        Utils.FindChild(PersonalGUI.transform, "Header (1)").Find("Text").GetComponent<Text>().text = _StationDestinationText.Value;
     }
 
     public static void ShowPersonalPortalGUI(Humanoid user, ItemDrop.ItemData item)

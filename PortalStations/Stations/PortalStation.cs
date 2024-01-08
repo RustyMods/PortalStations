@@ -1,6 +1,7 @@
 ﻿using System;
 using BepInEx;
 using UnityEngine;
+using static PortalStations.PortalStationsPlugin;
 
 namespace PortalStations.Stations;
 public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceiver
@@ -45,7 +46,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         if (hold) return false;
         if (alt)
         {
-            TextInput.instance.RequestText(this, "Rename Portal", 40);
+            TextInput.instance.RequestText(this, _StationRenameText.Value, 40);
             return true;
         }
         return InUseDistance(user) && PortalStationGUI.ShowPortalGUI(_znv);
@@ -61,9 +62,12 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 
     public string GetHoverText()
     {
-        return Localization.instance.Localize("[<color=yellow><b>$KEY_Use</b></color>] Use portal")
+        string portalName = _znv.GetZDO().GetString(_prop_station_name);
+        return portalName 
+               + "\n" 
+               + Localization.instance.Localize($"[<color=yellow><b>$KEY_Use</b></color>] {_StationUseText.Value}")
                + "\n"
-               + Localization.instance.Localize("[<color=yellow><b>L.Shift + $KEY_Use</b></color>] Set Name");
+               + Localization.instance.Localize($"[<color=yellow><b>L.Shift + $KEY_Use</b></color>] {_StationSetNameText.Value}");
     } 
     public string GetHoverName() => "";
     public string GetText() => !_znv.IsValid() ? "" : _znv.GetZDO().GetString(_prop_station_name);

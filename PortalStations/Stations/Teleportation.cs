@@ -44,6 +44,12 @@ public static class Teleportation
                 if (!itemData.m_shared.m_teleportable) return false;
                 continue;
             }
+
+            if (_UsePrivateKeys.Value is Toggle.On)
+            {
+                return ZoneSystem.instance.GetGlobalKey(key);
+            }
+            
             if (!keys.Contains(key)) return false;
         }
         return true;

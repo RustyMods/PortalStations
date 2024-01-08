@@ -6,9 +6,9 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
-using ItemManager;
 using JetBrains.Annotations;
 using PieceManager;
+using PortalStations.Managers;
 using PortalStations.Stations;
 using ServerSync;
 using UnityEngine;
@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.0.3";
+        internal const string ModVersion = "1.0.4";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -119,7 +119,7 @@ namespace PortalStations
             Item PersonalPortalDevice = new("portal_station_assets", "item_personalteleportationdevice");
             PersonalPortalDevice.Name.English("Portable Portal");
             PersonalPortalDevice.Description.English("Travel made easy");
-            PersonalPortalDevice.Crafting.Add(ItemManager.CraftingTable.Forge, 2);
+            PersonalPortalDevice.Crafting.Add(Managers.CraftingTable.Forge, 2);
             PersonalPortalDevice.RequiredItems.Add("SurtlingCore", 3);
             PersonalPortalDevice.RequiredItems.Add("LeatherScraps", 30);
             PersonalPortalDevice.RequiredItems.Add("Iron", 5);
@@ -198,6 +198,16 @@ namespace PortalStations
         public static ConfigEntry<string> _FlameMetalKey = null!;
 
         public static ConfigEntry<Toggle> _UsePortalKeys = null!;
+        public static ConfigEntry<Toggle> _UsePrivateKeys = null!;
+
+        public static ConfigEntry<string> _StationTitle = null!;
+        public static ConfigEntry<string> _PortableStationTitle = null!;
+        public static ConfigEntry<string> _StationDestinationText = null!;
+        public static ConfigEntry<string> _StationCloseText = null!;
+        public static ConfigEntry<string> _StationFilterText = null!;
+        public static ConfigEntry<string> _StationSetNameText = null!;
+        public static ConfigEntry<string> _StationUseText = null!;
+        public static ConfigEntry<string> _StationRenameText = null!;
         private void InitConfigs()
         {
             _TeleportAnything = config("Settings", "1 - Teleport Anything", Toggle.Off, "If on, portal station allows to teleport without restrictions");
@@ -218,6 +228,16 @@ namespace PortalStations
             _FlameMetalKey = config("Teleport Keys", "9 - Flametal", "defeated_queen", "Set the defeat key necessary to teleport ore");
 
             _UsePortalKeys = config("Teleport Keys", "0 - Use Keys", Toggle.Off, "If on, portal checks keys to portal player if carrying ores, dragon eggs, etc...");
+            _UsePrivateKeys = config("Teleport Keys", "01 - Use Private Keys", Toggle.Off, "If on, plugin uses private keys instead of global keys");
+
+            _StationTitle = config("Localization", "0 - Station Title", "Portal Station", "Station name on user interface", false);
+            _PortableStationTitle = config("Localization", "1 - Portable Station Title", "Teleporter", "Portable Portal name on user interface", false);
+            _StationDestinationText = config("Localization", "2 - Destination Text", "Destinations", "Text display for destinations on user interface", false);
+            _StationCloseText = config("Localization", "3 - Close Text", "Close", "Text display for close button on user interface", false);
+            _StationFilterText = config("Localization", "4 - Filter Text", "Filter", "Text display for filter on user interface", false);
+            _StationRenameText = config("Localization", "5 - Rename Text", "Rename Portal", "Text display on pop up to rename portal", false);
+            _StationUseText = config("Localization", "6 - Use Text", "Use portal", "Text display when hover over station to use portal", false);
+            _StationSetNameText = config("Localization", "7 - Set Name Text", "Set Name", "Text display when hover over station to rename", false);
         }
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,
