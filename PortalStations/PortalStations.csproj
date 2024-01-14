@@ -131,6 +131,7 @@
         <Compile Include="Stations\SetData.cs" />
         <Compile Include="Stations\Stations.cs" />
         <Compile Include="Stations\Teleportation.cs" />
+        <Compile Include="Stations\TriggerEffects.cs" />
         <Compile Include="VersionHandshake.cs" />
     </ItemGroup>
     <ItemGroup>

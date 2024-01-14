@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.0.4";
+        internal const string ModVersion = "1.0.6";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -98,6 +98,7 @@ namespace PortalStations
             portalPlatform.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(portalPlatform.Prefab);
             Stations.Stations.PrefabsToSearch.Add(portalPlatform.Prefab.name);
+            // portalPlatform.Prefab.transform.Find("TriggerCollider").gameObject.AddComponent<TriggerEffects>();
             
             BuildPiece portalStationDoor = new("portal_station_assets", "portalStationDoor");
             portalStationDoor.Name.English("Gate Portal");
@@ -208,6 +209,10 @@ namespace PortalStations
         public static ConfigEntry<string> _StationSetNameText = null!;
         public static ConfigEntry<string> _StationUseText = null!;
         public static ConfigEntry<string> _StationRenameText = null!;
+        public static ConfigEntry<string> _NotEnoughFuelText = null!;
+        public static ConfigEntry<string> _PublicText = null!;
+
+        public static ConfigEntry<Toggle> _OnlyAdminRename = null!;
         private void InitConfigs()
         {
             _TeleportAnything = config("Settings", "1 - Teleport Anything", Toggle.Off, "If on, portal station allows to teleport without restrictions");
@@ -216,6 +221,8 @@ namespace PortalStations
             _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<int>(1, 50)));
             _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<int>(1, 50)));
             _PortalToPlayers = config("Settings", "6 - Portable Portal To Players", Toggle.On, "If on, portable portal shows players as destination options");
+            _OnlyAdminRename = config("Settings", "7 - Only Admin Renames", Toggle.Off,
+                "If on, only admins with no cost cheat on can rename portals");
             
             _TinKey = config("Teleport Keys", "1 - Tin", "defeated_gdking", "Set the defeat key necessary to teleport ore");
             _CopperKey = config("Teleport Keys", "2 - Copper", "defeated_gdking", "Set the defeat key necessary to teleport ore");
@@ -238,6 +245,9 @@ namespace PortalStations
             _StationRenameText = config("Localization", "5 - Rename Text", "Rename Portal", "Text display on pop up to rename portal", false);
             _StationUseText = config("Localization", "6 - Use Text", "Use portal", "Text display when hover over station to use portal", false);
             _StationSetNameText = config("Localization", "7 - Set Name Text", "Set Name", "Text display when hover over station to rename", false);
+            _NotEnoughFuelText = config("Localization", "8 - Not Enough Fuel", "Not Enough Fuel",
+                "Text that appears on portable portal GUI if user does not have enough fuel", false);
+            _PublicText = config("Localization", "9 - Public Text", "Public", "Text display for public toggle", false);
         }
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,

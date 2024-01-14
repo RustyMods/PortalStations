@@ -14,6 +14,9 @@ public static class PortalStationGUI
     private static RectTransform ItemListRoot = null!;
     private static ZNetView currentPortalStation = null!;
     public const float portal_exit_distance = 1.0f;
+
+    private static GameObject ToggleOn = null!;
+    private static GameObject ToggleOff = null!;
     public static void InitGUI(InventoryGui instance)
     {
         if (!instance) return;
@@ -36,7 +39,6 @@ public static class PortalStationGUI
         closeButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
         button.Find("Text").GetComponent<Text>().text = _StationCloseText.Value;
 
-        
         Image vanillaBackground = instance.m_trophiesPanel.transform.Find("TrophiesFrame/border (1)").GetComponent<Image>();
         Image[] PortalStationImages = PortalGUI.GetComponentsInChildren<Image>();
         foreach (Image image in PortalStationImages) image.material = vanillaBackground.material;
@@ -48,6 +50,26 @@ public static class PortalStationGUI
         Utils.FindChild(PortalGUI.transform, "Header").Find("Text").GetComponent<Text>().text = _StationTitle.Value;
         Utils.FindChild(PortalGUI.transform, "Header (2)").Find("Text").GetComponent<Text>().text = _StationFilterText.Value;
         Utils.FindChild(PortalGUI.transform, "Header (1)").Find("Text").GetComponent<Text>().text = _StationDestinationText.Value;
+        Utils.FindChild(PortalGUI.transform, "Header (3)").Find("Text").GetComponent<Text>().text = _PublicText.Value;
+
+        Transform ToggleButton = Utils.FindChild(PortalGUI.transform, "$part_toggleButton");
+        if (!ToggleButton.TryGetComponent(out Button toggleButton)) return;
+        toggleButton.onClick.AddListener(SetToggleValue);
+
+        ToggleOn = Utils.FindChild(ToggleButton, "On").gameObject;
+        ToggleOff = Utils.FindChild(ToggleButton, "Off").gameObject;
+    }
+
+    private static void SetToggleValue()
+    {
+        if (!currentPortalStation.IsValid()) return;
+        long localId = Player.m_localPlayer.GetPlayerID();
+        long creatorId = currentPortalStation.GetZDO().GetLong(ZDOVars.s_creator);
+        if (localId != creatorId) return;
+        bool flag = !currentPortalStation.GetZDO().GetBool(PortalStation._prop_station_code);
+        currentPortalStation.GetZDO().Set(PortalStation._prop_station_code, flag);
+        ToggleOn.SetActive(flag);
+        ToggleOff.SetActive(!flag);
     }
     public static bool ShowPortalGUI(ZNetView znv)
     {
@@ -60,6 +82,9 @@ public static class PortalStationGUI
         stationName.onValueChanged.RemoveAllListeners();
         stationName.onValueChanged.AddListener(FilterDestinations);
 
+        bool flag = znv.GetZDO().GetBool(PortalStation._prop_station_code);
+        ToggleOn.SetActive(flag);
+        ToggleOff.SetActive(!flag);
         return true;
     }
     private static void FilterDestinations(string value) => GetDestinations(currentPortalStation, value);
@@ -67,6 +92,8 @@ public static class PortalStationGUI
     {
         if (znv == null || !znv.IsValid()) return;
         foreach (Transform item in ItemListRoot) Object.Destroy(item.gameObject);
+        
+        long localId = Player.m_localPlayer.GetPlayerID();
         // Get all portal stations
         List<ZDO> Destinations = new();
         foreach (string prefab in Stations.PrefabsToSearch)
@@ -79,7 +106,12 @@ public static class PortalStationGUI
         }
         foreach (ZDO zdo in Destinations)
         {
+            // If Portal Station is itself, ignore
             if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) continue;
+            // If Portal Station is private and user is not creator, ignore
+            long creatorId = zdo.GetLong(ZDOVars.s_creator);
+            if (!zdo.GetBool(PortalStation._prop_station_code) && creatorId != localId) continue;
+            // Create GUI item
             string name = zdo.GetString(PortalStation._prop_station_name);
             if (name.IsNullOrWhiteSpace()) continue;
             if (filter.IsNullOrWhiteSpace() || name.ToLower().Contains(filter.ToLower()))

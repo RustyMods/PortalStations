@@ -99,10 +99,14 @@ public static class PersonalTeleportationGUI
                 });
             }
         }
-        
+
+        long localId = Player.m_localPlayer.GetPlayerID();
+
         foreach (ZDO zdo in Destinations)
         {
             if (!zdo.IsValid()) continue;
+            long creatorId = zdo.GetLong(ZDOVars.s_creator);
+            if (!zdo.GetBool(PortalStation._prop_station_code) && creatorId != localId) continue;
             string name = zdo.GetString(PortalStation._prop_station_name);
             if (name.IsNullOrWhiteSpace()) continue;
             int cost = PersonalTeleportationDevice.CalculateFuelCost(deviceData, Vector3.Distance(zdo.GetPosition(), user.transform.position));
@@ -118,7 +122,7 @@ public static class PersonalTeleportationGUI
     }
     private static void TeleportToDestinationWithCost(ZDO zdo, int cost, Humanoid user, ItemDrop fuelItem)
     {
-        if (!Player.m_localPlayer.IsTeleportable() && _TeleportAnything.Value is PortalStationsPlugin.Toggle.Off)
+        if (!Teleportation.IsTeleportable(Player.m_localPlayer))
         {
             Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return;
@@ -127,7 +131,7 @@ public static class PersonalTeleportationGUI
         int inventoryFuel = PersonalTeleportationDevice.GetFuelAmount(user, fuelItem);
         if (inventoryFuel < cost && !Player.m_localPlayer.NoCostCheat())
         {
-            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "Not enough fuel");
+            Player.m_localPlayer.Message(MessageHud.MessageType.Center, _NotEnoughFuelText.Value);
             return;
         }
 
