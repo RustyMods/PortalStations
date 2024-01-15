@@ -211,6 +211,7 @@ namespace PortalStations
         public static ConfigEntry<string> _StationRenameText = null!;
         public static ConfigEntry<string> _NotEnoughFuelText = null!;
         public static ConfigEntry<string> _PublicText = null!;
+        public static ConfigEntry<string> _PrivateText = null!;
 
         public static ConfigEntry<Toggle> _OnlyAdminRename = null!;
         private void InitConfigs()
@@ -248,6 +249,8 @@ namespace PortalStations
             _NotEnoughFuelText = config("Localization", "8 - Not Enough Fuel", "Not Enough Fuel",
                 "Text that appears on portable portal GUI if user does not have enough fuel", false);
             _PublicText = config("Localization", "9 - Public Text", "Public", "Text display for public toggle", false);
+            _PrivateText = config("Localization", "9 - Private Text", "Private", "Text display for private toggle",
+                false);
         }
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,

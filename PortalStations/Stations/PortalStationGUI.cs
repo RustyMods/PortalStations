@@ -70,6 +70,9 @@ public static class PortalStationGUI
         currentPortalStation.GetZDO().Set(PortalStation._prop_station_code, flag);
         ToggleOn.SetActive(flag);
         ToggleOff.SetActive(!flag);
+        
+        Utils.FindChild(PortalGUI.transform, "Header (3)").Find("Text").GetComponent<Text>().text = flag ? _PublicText.Value : _PrivateText.Value;
+
     }
     public static bool ShowPortalGUI(ZNetView znv)
     {
@@ -85,6 +88,8 @@ public static class PortalStationGUI
         bool flag = znv.GetZDO().GetBool(PortalStation._prop_station_code);
         ToggleOn.SetActive(flag);
         ToggleOff.SetActive(!flag);
+        
+        Utils.FindChild(PortalGUI.transform, "Header (3)").Find("Text").GetComponent<Text>().text = flag ? _PublicText.Value : _PrivateText.Value;
         return true;
     }
     private static void FilterDestinations(string value) => GetDestinations(currentPortalStation, value);
