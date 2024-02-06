@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.0.6";
+        internal const string ModVersion = "1.0.9";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -98,7 +98,6 @@ namespace PortalStations
             portalPlatform.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(portalPlatform.Prefab);
             Stations.Stations.PrefabsToSearch.Add(portalPlatform.Prefab.name);
-            // portalPlatform.Prefab.transform.Find("TriggerCollider").gameObject.AddComponent<TriggerEffects>();
             
             BuildPiece portalStationDoor = new("portal_station_assets", "portalStationDoor");
             portalStationDoor.Name.English("Gate Portal");
@@ -199,7 +198,6 @@ namespace PortalStations
         public static ConfigEntry<string> _FlameMetalKey = null!;
 
         public static ConfigEntry<Toggle> _UsePortalKeys = null!;
-        public static ConfigEntry<Toggle> _UsePrivateKeys = null!;
 
         public static ConfigEntry<string> _StationTitle = null!;
         public static ConfigEntry<string> _PortableStationTitle = null!;
@@ -214,6 +212,9 @@ namespace PortalStations
         public static ConfigEntry<string> _PrivateText = null!;
 
         public static ConfigEntry<Toggle> _OnlyAdminRename = null!;
+
+        public static ConfigEntry<float> _PortalVolume = null!;
+        public static ConfigEntry<float> _PersonalPortalDurabilityDrain = null!;
         private void InitConfigs()
         {
             _TeleportAnything = config("Settings", "1 - Teleport Anything", Toggle.Off, "If on, portal station allows to teleport without restrictions");
@@ -224,6 +225,11 @@ namespace PortalStations
             _PortalToPlayers = config("Settings", "6 - Portable Portal To Players", Toggle.On, "If on, portable portal shows players as destination options");
             _OnlyAdminRename = config("Settings", "7 - Only Admin Renames", Toggle.Off,
                 "If on, only admins with no cost cheat on can rename portals");
+
+            _PortalVolume = config("Settings", "8 - Portal Volume", 0.8f, new ConfigDescription("Set the volume of the portal effects", new AcceptableValueRange<float>(0f, 1f)),false);
+            _PersonalPortalDurabilityDrain = config("Settings", "9 - Portable Portal Durability Drain", 10.0f,
+                new ConfigDescription("Set the durability drain per portable portal usage",
+                    new AcceptableValueRange<float>(0f, 100f)));
             
             _TinKey = config("Teleport Keys", "1 - Tin", "defeated_gdking", "Set the defeat key necessary to teleport ore");
             _CopperKey = config("Teleport Keys", "2 - Copper", "defeated_gdking", "Set the defeat key necessary to teleport ore");
@@ -236,7 +242,6 @@ namespace PortalStations
             _FlameMetalKey = config("Teleport Keys", "9 - Flametal", "defeated_queen", "Set the defeat key necessary to teleport ore");
 
             _UsePortalKeys = config("Teleport Keys", "0 - Use Keys", Toggle.Off, "If on, portal checks keys to portal player if carrying ores, dragon eggs, etc...");
-            _UsePrivateKeys = config("Teleport Keys", "01 - Use Private Keys", Toggle.Off, "If on, plugin uses private keys instead of global keys");
 
             _StationTitle = config("Localization", "0 - Station Title", "Portal Station", "Station name on user interface", false);
             _PortableStationTitle = config("Localization", "1 - Portable Station Title", "Teleporter", "Portable Portal name on user interface", false);
@@ -251,6 +256,7 @@ namespace PortalStations
             _PublicText = config("Localization", "9 - Public Text", "Public", "Text display for public toggle", false);
             _PrivateText = config("Localization", "9 - Private Text", "Private", "Text display for private toggle",
                 false);
+
         }
 
         private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,

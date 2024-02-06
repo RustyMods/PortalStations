@@ -2,6 +2,7 @@
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.UI;
 using static PortalStations.PortalStationsPlugin;
 
 namespace PortalStations.Stations;
@@ -9,11 +10,51 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 {
     public static readonly int _prop_station_name = "stationName".GetStableHashCode();
     public static readonly int _prop_station_code = "stationNetwork".GetStableHashCode();
+    public static readonly string _FavoriteKey = "PortalStationFavorites";
+    
     private const float use_distance = 5.0f;
     private ZNetView _znv = null!;
-    private static Transform? emissive;
+
+    public float m_fadeDuration = 1f;
+    public ParticleSystem[] m_particles = null!;
+    public Light m_light = null!;
+    public AudioSource m_audioSource = null!;
+    public Material? m_rune;
+
+    public Color m_baseColor;
+    public float m_lightBaseIntensity;
+    public bool m_active = true;
+    public float m_intensity;
+
     private void Awake()
     {
+        GameObject portalEffects = Utils.FindChild(transform, "Portal Effects").gameObject;
+
+        m_particles = portalEffects.GetComponentsInChildren<ParticleSystem>();
+        m_light = portalEffects.GetComponentInChildren<Light>();
+        m_audioSource = portalEffects.GetComponentInChildren<AudioSource>();
+        
+        Transform? m_runeGlyph = Utils.FindChild(transform, "emissive");
+        if (m_runeGlyph)
+        {
+            m_rune = m_runeGlyph.GetComponent<MeshRenderer>().material;
+            m_baseColor = m_rune.color;
+            m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, 0f);
+        }
+
+        if (m_light)
+        {
+            m_lightBaseIntensity = m_light.intensity;
+            m_light.intensity = 0.0f;
+        }
+
+        if (m_audioSource)
+        {
+            m_audioSource.volume = 0.0f;
+        }
+        
+        SetActive(false);
+
         _znv = GetComponent<ZNetView>();
         if (!_znv.IsValid()) return;
 
@@ -22,32 +63,41 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         
         if (!_znv.IsOwner() || !Player.m_localPlayer) return;
         if (_znv.GetZDO().GetString(_prop_station_name).IsNullOrWhiteSpace()) _znv.GetZDO().Set(_prop_station_name, Player.m_localPlayer.GetPlayerName() + " Portal");
-        
-        emissive = Utils.FindChild(transform, "emissive");
-        if (emissive) emissive.gameObject.SetActive(false);
-        
-        GameObject portalEffects = Utils.FindChild(transform, "Portal Effects").gameObject;
-        EffectFade newFade = portalEffects.AddComponent<EffectFade>();
-        newFade.m_fadeDuration = 1f;
-        newFade.SetActive(false);
     }
 
-    private void FixedUpdate()
+    public void Update()
     {
-        if (!_znv.IsValid()) return;
-        
         Player closestPlayer = Player.GetClosestPlayer(transform.position, use_distance);
         bool flag = closestPlayer && Teleportation.IsTeleportable(closestPlayer);
-        GameObject portalEffects = Utils.FindChild(transform, "Portal Effects").gameObject;
-        if (!portalEffects.TryGetComponent(out EffectFade fade))
+        SetActive(flag);
+        
+        m_intensity = Mathf.MoveTowards(m_intensity, m_active ? 1f : 0.0f, Time.deltaTime / m_fadeDuration);
+        if (m_light)
         {
-            EffectFade newFade = portalEffects.AddComponent<EffectFade>();
-            newFade.m_fadeDuration = 1f;
-            newFade.SetActive(flag);
-            return;
-        };
-        if (fade.m_active != flag) fade.SetActive(flag);
-        if (emissive != null) emissive.gameObject.SetActive(flag);
+            m_light.intensity = m_intensity * m_lightBaseIntensity;
+            m_light.enabled = m_light.intensity > 0.0;
+        }
+
+        if (m_audioSource)
+        {
+            m_audioSource.volume = m_intensity * _PortalVolume.Value;
+        }
+
+        if (m_rune)
+        {
+            m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, m_intensity * 1f);
+        }
+    }
+
+    public void SetActive(bool active)
+    {
+        if (m_active == active) return;
+        m_active = active;
+        foreach (ParticleSystem particle in m_particles)
+        {
+            ParticleSystem.EmissionModule particleEmission = particle.emission;
+            particleEmission.enabled = active;
+        }
     }
     private void OnDestroy() => PortalStationGUI.HidePortalGUI();
     public bool Interact(Humanoid user, bool hold, bool alt)
@@ -55,7 +105,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         if (hold) return false;
         if (alt)
         {
-            if (_OnlyAdminRename.Value is Toggle.On && !Player.m_localPlayer.NoCostCheat()) return false;
+            if (_OnlyAdminRename.Value is PortalStationsPlugin.Toggle.On && !Player.m_localPlayer.NoCostCheat()) return false;
             TextInput.instance.RequestText(this, _StationRenameText.Value, 40);
             return true;
         }
@@ -80,7 +130,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
     public bool UseItem(Humanoid user, ItemDrop.ItemData item) => false;
     public string GetHoverText()
     {
-        if (_OnlyAdminRename.Value is Toggle.On && !Player.m_localPlayer.NoCostCheat())
+        if (_OnlyAdminRename.Value is PortalStationsPlugin.Toggle.On && !Player.m_localPlayer.NoCostCheat())
         {
             return _znv.GetZDO().GetString(_prop_station_name)
                    + "\n"

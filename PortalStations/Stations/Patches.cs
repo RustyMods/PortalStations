@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using System.Collections.Generic;
+using HarmonyLib;
+using YamlDotNet.Serialization;
 using static PortalStations.Stations.PersonalTeleportationGUI;
 using static PortalStations.Stations.PortalStationGUI;
 
@@ -35,5 +37,31 @@ public static class Patches
     static class StationPlayerControllerOverride
     {
         private static bool Prefix() => !IsPersonalPortalGUIVisible() || !IsPortalGUIVisible();
+    }
+    
+    [HarmonyPatch(typeof(Game), nameof(Game.Logout))]
+    private static class LogoutPatch
+    {
+        private static void Postfix() => SaveFavorites();
+    }
+
+    public static void SaveFavorites()
+    {
+        ISerializer serializer = new SerializerBuilder().Build();
+        string data = serializer.Serialize(Favorites);
+
+        Player.m_localPlayer.m_customData[PortalStation._FavoriteKey] = data;
+    }
+
+    [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
+    private static class SetLocalPlayerPatch
+    {
+        private static void Postfix(Player __instance)
+        {
+            if (!__instance) return;
+            if (!__instance.m_customData.TryGetValue(PortalStation._FavoriteKey, out string data)) return;
+            IDeserializer deserializer = new DeserializerBuilder().Build();
+            Favorites = deserializer.Deserialize<List<string>>(data);
+        }
     }
 }

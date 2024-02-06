@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
@@ -46,7 +47,7 @@ public static class PieceEffectsSetter
         newSource.playOnAwake = source.playOnAwake;
         newSource.loop = source.loop;
         newSource.priority = source.priority;
-        newSource.volume = source.volume;
+        newSource.volume = PortalStationsPlugin._PortalVolume.Value;
         newSource.pitch = source.pitch;
         newSource.panStereo = source.panStereo;
         newSource.spatialBlend = source.spatialBlend;
@@ -153,9 +154,9 @@ public static class PieceEffectsSetter
         WearNTearScript.m_hitEffect = hitEffects;
         WearNTearScript.m_switchEffect = switchEffects;
         if (health != 0f) WearNTearScript.m_health = health;
-        }
-        private static void SetPieceScript(ZNetScene scene, GameObject prefab, string placementEffectName1, string placementEffectName2)
-        {
+    }
+    private static void SetPieceScript(ZNetScene scene, GameObject prefab, string placementEffectName1, string placementEffectName2)
+    {
         GameObject placeEffect1 = scene.GetPrefab(placementEffectName1);
         GameObject placeEffect2 = scene.GetPrefab(placementEffectName2);
         if (!placeEffect1 || !placeEffect2) return;

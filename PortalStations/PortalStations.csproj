@@ -131,7 +131,6 @@
         <Compile Include="Stations\SetData.cs" />
         <Compile Include="Stations\Stations.cs" />
         <Compile Include="Stations\Teleportation.cs" />
-        <Compile Include="Stations\TriggerEffects.cs" />
         <Compile Include="VersionHandshake.cs" />
     </ItemGroup>
     <ItemGroup>
@@ -154,6 +153,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
+        <PackageReference Include="YamlDotNet" Version="15.1.0" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

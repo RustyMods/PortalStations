@@ -45,12 +45,7 @@ public static class Teleportation
                 continue;
             }
 
-            if (_UsePrivateKeys.Value is Toggle.On)
-            {
-                return ZoneSystem.instance.GetGlobalKey(key);
-            }
-            
-            if (!keys.Contains(key)) return false;
+            if (!keys.Contains(key) && !ZoneSystem.instance.GetGlobalKey(key)) return false;
         }
         return true;
     }

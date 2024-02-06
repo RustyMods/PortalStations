@@ -17,6 +17,8 @@ public static class PortalStationGUI
 
     private static GameObject ToggleOn = null!;
     private static GameObject ToggleOff = null!;
+    
+    public static List<string> Favorites = new();
     public static void InitGUI(InventoryGui instance)
     {
         if (!instance) return;
@@ -35,17 +37,27 @@ public static class PortalStationGUI
         Transform button = Utils.FindChild(PortalGUI.transform, "$part_CloseButton");
         Button closeButton = button.GetComponent<Button>();
         closeButton.onClick.AddListener(HidePortalGUI);
-        ButtonSfx closeButtonSfx = button.gameObject.AddComponent<ButtonSfx>();
-        closeButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
-        button.Find("Text").GetComponent<Text>().text = _StationCloseText.Value;
+        if (!button.GetComponent<ButtonSfx>())
+        {
+            ButtonSfx closeButtonSfx = button.gameObject.AddComponent<ButtonSfx>();
+            closeButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        }
 
+        if (button.Find("Text").TryGetComponent(out Text buttonText))
+        {
+            buttonText.text = _StationCloseText.Value;
+        }
+        
         Image vanillaBackground = instance.m_trophiesPanel.transform.Find("TrophiesFrame/border (1)").GetComponent<Image>();
         Image[] PortalStationImages = PortalGUI.GetComponentsInChildren<Image>();
         foreach (Image image in PortalStationImages) image.material = vanillaBackground.material;
 
         Transform teleportButton = Utils.FindChild(PortalGUI_Item.transform, "$part_TeleportButton");
-        ButtonSfx teleportButtonSfx = teleportButton.gameObject.AddComponent<ButtonSfx>();
-        teleportButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        if (!teleportButton.GetComponent<ButtonSfx>())
+        {
+            ButtonSfx teleportButtonSfx = teleportButton.gameObject.AddComponent<ButtonSfx>();
+            teleportButtonSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        }
         
         Utils.FindChild(PortalGUI.transform, "Header").Find("Text").GetComponent<Text>().text = _StationTitle.Value;
         Utils.FindChild(PortalGUI.transform, "Header (2)").Find("Text").GetComponent<Text>().text = _StationFilterText.Value;
@@ -56,8 +68,39 @@ public static class PortalStationGUI
         if (!ToggleButton.TryGetComponent(out Button toggleButton)) return;
         toggleButton.onClick.AddListener(SetToggleValue);
 
+        if (!toggleButton.GetComponent<ButtonSfx>())
+        {
+            ButtonSfx ToggleSfx = ToggleButton.gameObject.AddComponent<ButtonSfx>();
+            ToggleSfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        }
+
         ToggleOn = Utils.FindChild(ToggleButton, "On").gameObject;
         ToggleOff = Utils.FindChild(ToggleButton, "Off").gameObject;
+        
+        if (Utils.FindChild(PortalGUI.transform, "$part_PortalStationName").TryGetComponent(out InputField filter))
+        {
+            filter.onValueChanged.AddListener(FilterDestinations);
+        }
+
+        Transform favorite = Utils.FindChild(PortalGUI_Item.transform, "$part_FavoriteButton");
+        if (!favorite.GetComponent<ButtonSfx>())
+        {
+            ButtonSfx sfx = favorite.gameObject.AddComponent<ButtonSfx>();
+            sfx.m_sfxPrefab = VanillaButtonSFX.m_sfxPrefab;
+        }
+    }
+
+    private static void SetFavorite(ZDO zdo)
+    {
+        if (Favorites.Contains(zdo.GetString(PortalStation._prop_station_name)))
+        {
+            Favorites.Remove(zdo.GetString(PortalStation._prop_station_name));
+        }
+        else
+        {
+            Favorites.Add(zdo.GetString(PortalStation._prop_station_name));
+        }
+        Patches.SaveFavorites();
     }
 
     private static void SetToggleValue()
@@ -76,20 +119,22 @@ public static class PortalStationGUI
     }
     public static bool ShowPortalGUI(ZNetView znv)
     {
-        znv.ClaimOwnership();
+        if (!znv) return false;
         if (!znv.IsValid()) return false;
+        znv.ClaimOwnership();
         PortalGUI.SetActive(true);
         currentPortalStation = znv;
         GetDestinations(znv);
-        InputField stationName = Utils.FindChild(PortalGUI.transform, "$part_PortalStationName").GetComponent<InputField>();
-        stationName.onValueChanged.RemoveAllListeners();
-        stationName.onValueChanged.AddListener(FilterDestinations);
 
         bool flag = znv.GetZDO().GetBool(PortalStation._prop_station_code);
         ToggleOn.SetActive(flag);
         ToggleOff.SetActive(!flag);
+
+        if (Utils.FindChild(PortalGUI.transform, "Header (3)").Find("Text").TryGetComponent(out Text public_private))
+        {
+            public_private.text = flag ? _PublicText.Value : _PrivateText.Value;
+        }
         
-        Utils.FindChild(PortalGUI.transform, "Header (3)").Find("Text").GetComponent<Text>().text = flag ? _PublicText.Value : _PrivateText.Value;
         return true;
     }
     private static void FilterDestinations(string value) => GetDestinations(currentPortalStation, value);
@@ -109,7 +154,10 @@ public static class PortalStationGUI
             {
             }
         }
-        foreach (ZDO zdo in Destinations)
+
+        List<ZDO> FavoriteList = Destinations.FindAll(x => Favorites.Contains(x.GetString(PortalStation._prop_station_name)));
+
+        foreach (ZDO zdo in FavoriteList)
         {
             // If Portal Station is itself, ignore
             if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) continue;
@@ -125,6 +173,50 @@ public static class PortalStationGUI
                 Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
                 Button teleportButton = Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>();
                 teleportButton.onClick.AddListener(() => { TeleportToDestination(zdo); });
+                
+                Transform favorite = Utils.FindChild(item.transform, "$part_FavoriteButton");
+                Image favoriteImage = favorite.GetChild(0).GetComponent<Image>();
+                favoriteImage.color = Color.white;
+                if (favorite.TryGetComponent(out Button favoriteButton))
+                {
+                    favoriteButton.onClick.AddListener(() =>
+                    {
+                        SetFavorite(zdo);
+                        GetDestinations(znv, filter);
+                    });
+                }
+            }
+        }
+        
+        foreach (ZDO zdo in Destinations)
+        {
+            if (FavoriteList.Contains(zdo)) continue;
+            // If Portal Station is itself, ignore
+            if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) continue;
+            // If Portal Station is private and user is not creator, ignore
+            long creatorId = zdo.GetLong(ZDOVars.s_creator);
+            if (!zdo.GetBool(PortalStation._prop_station_code) && creatorId != localId) continue;
+            // Create GUI item
+            string name = zdo.GetString(PortalStation._prop_station_name);
+            if (name.IsNullOrWhiteSpace()) continue;
+            if (filter.IsNullOrWhiteSpace() || name.ToLower().Contains(filter.ToLower()))
+            {
+                GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
+                Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
+                Button teleportButton = Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>();
+                teleportButton.onClick.AddListener(() => { TeleportToDestination(zdo); });
+                
+                Transform favorite = Utils.FindChild(item.transform, "$part_FavoriteButton");
+                Image favoriteImage = favorite.GetChild(0).GetComponent<Image>();
+                favoriteImage.color = Color.black;
+                if (favorite.TryGetComponent(out Button favoriteButton))
+                {
+                    favoriteButton.onClick.AddListener(() =>
+                    {
+                        SetFavorite(zdo);
+                        GetDestinations(znv, filter);
+                    });
+                }
             }
         }
     }
