@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using HarmonyLib;
+using UnityEngine;
 using YamlDotNet.Serialization;
 using static PortalStations.Stations.PersonalTeleportationGUI;
 using static PortalStations.Stations.PortalStationGUI;
@@ -47,10 +48,18 @@ public static class Patches
 
     public static void SaveFavorites()
     {
-        ISerializer serializer = new SerializerBuilder().Build();
-        string data = serializer.Serialize(Favorites);
+        if (!Player.m_localPlayer) return;
+        try
+        {
+            ISerializer serializer = new SerializerBuilder().Build();
+            string data = serializer.Serialize(Favorites);
 
-        Player.m_localPlayer.m_customData[PortalStation._FavoriteKey] = data;
+            Player.m_localPlayer.m_customData[PortalStation._FavoriteKey] = data;
+        }
+        catch
+        {
+            PortalStationsPlugin.PortalStationsLogger.LogDebug("Failed to save favorite portals");
+        }
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
@@ -62,6 +71,24 @@ public static class Patches
             if (!__instance.m_customData.TryGetValue(PortalStation._FavoriteKey, out string data)) return;
             IDeserializer deserializer = new DeserializerBuilder().Build();
             Favorites = deserializer.Deserialize<List<string>>(data);
+        }
+    }
+
+    [HarmonyPatch(typeof(PieceTable), nameof(PieceTable.GetPiecesInSelectedCategory))]
+    private static class PieceTableGetPiecesPatch
+    {
+        private static void Postfix(ref List<Piece> __result)
+        {
+            if (PortalStationsPlugin._OnlyAdminBuilds.Value is PortalStationsPlugin.Toggle.Off) return;
+            if (Player.m_localPlayer.NoCostCheat()) return;
+            List<Piece> output = new();
+            foreach (var piece in __result)
+            {
+                if (PieceEffectsSetter.PrefabsToSet.Contains(piece.gameObject)) continue;
+                output.Add(piece);
+            }
+
+            __result = output;
         }
     }
 }

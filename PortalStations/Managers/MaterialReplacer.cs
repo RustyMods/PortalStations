@@ -69,7 +69,8 @@ namespace PieceManager
                          gameObject.GetComponentsInChildren<Renderer>(true)))
             {
                 ObjectToSwap.TryGetValue(renderer.gameObject, out bool jotunnPrefabFlag);
-                Material[] newMats = new Material[renderer.sharedMaterials.Length];
+                // Material[] newMats = new Material[renderer.sharedMaterials.Length];
+                Material[] newMats = renderer.sharedMaterials;
                 int i = 0;
                 foreach (Material t in renderer.sharedMaterials)
                 {

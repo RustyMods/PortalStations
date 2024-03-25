@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Security.Policy;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
@@ -67,6 +69,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 
     public void Update()
     {
+        
         Player closestPlayer = Player.GetClosestPlayer(transform.position, use_distance);
         bool flag = closestPlayer && Teleportation.IsTeleportable(closestPlayer);
         SetActive(flag);

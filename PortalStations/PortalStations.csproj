@@ -143,9 +143,6 @@
         <Content Include=".gitignore" />
         <Content Include="environment.props" />
         <Content Include="ILRepack.targets" />
-        <Content Include="Libs\PieceManager.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
         <Content Include="Libs\ServerSync.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

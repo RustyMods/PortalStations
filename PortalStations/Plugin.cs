@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.0.9";
+        internal const string ModVersion = "1.1.1";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -215,6 +215,8 @@ namespace PortalStations
 
         public static ConfigEntry<float> _PortalVolume = null!;
         public static ConfigEntry<float> _PersonalPortalDurabilityDrain = null!;
+
+        public static ConfigEntry<Toggle> _OnlyAdminBuilds = null!;
         private void InitConfigs()
         {
             _TeleportAnything = config("Settings", "1 - Teleport Anything", Toggle.Off, "If on, portal station allows to teleport without restrictions");
@@ -256,6 +258,9 @@ namespace PortalStations
             _PublicText = config("Localization", "9 - Public Text", "Public", "Text display for public toggle", false);
             _PrivateText = config("Localization", "9 - Private Text", "Private", "Text display for private toggle",
                 false);
+
+            _OnlyAdminBuilds = config("General", "Only Admin Can Build", Toggle.Off,
+                "Set visibility of portals in build menu");
 
         }
 
