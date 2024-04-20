@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Security.Policy;
 using BepInEx;
-using HarmonyLib;
 using UnityEngine;
-using UnityEngine.UI;
 using static PortalStations.PortalStationsPlugin;
 
 namespace PortalStations.Stations;
@@ -86,7 +82,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
             m_audioSource.volume = m_intensity * _PortalVolume.Value;
         }
 
-        if (m_rune)
+        if (m_rune != null)
         {
             m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, m_intensity * 1f);
         }
@@ -108,7 +104,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         if (hold) return false;
         if (alt)
         {
-            if (_OnlyAdminRename.Value is PortalStationsPlugin.Toggle.On && !Player.m_localPlayer.NoCostCheat()) return false;
+            if (_OnlyAdminRename.Value is Toggle.On && !Player.m_localPlayer.NoCostCheat()) return false;
             TextInput.instance.RequestText(this, _StationRenameText.Value, 40);
             return true;
         }

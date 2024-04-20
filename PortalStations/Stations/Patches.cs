@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using HarmonyLib;
-using UnityEngine;
 using YamlDotNet.Serialization;
-using static PortalStations.Stations.PersonalTeleportationGUI;
 using static PortalStations.Stations.PortalStationGUI;
 
 namespace PortalStations.Stations;
@@ -14,8 +12,7 @@ public static class Patches
     {
         private static void Postfix(InventoryGui __instance)
         {
-            PersonalTeleportationGUI.InitGUI(__instance);
-            PortalStationGUI.InitGUI(__instance);
+            InitGUI(__instance);
         }
     }
     
@@ -24,20 +21,20 @@ public static class Patches
     {
         private static void Postfix(ref bool __result)
         {
-            __result |= IsPersonalPortalGUIVisible() || IsPortalGUIVisible();
+            __result |=  IsPortalGUIVisible();
         }
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Hide))]
     static class IsStationVisible
     {
-        private static bool Prefix() => !IsPersonalPortalGUIVisible() || !IsPortalGUIVisible();
+        private static bool Prefix() => !IsPortalGUIVisible();
     }
 
     [HarmonyPatch(typeof(PlayerController), nameof(PlayerController.FixedUpdate))]
     static class StationPlayerControllerOverride
     {
-        private static bool Prefix() => !IsPersonalPortalGUIVisible() || !IsPortalGUIVisible();
+        private static bool Prefix() => !IsPortalGUIVisible();
     }
     
     [HarmonyPatch(typeof(Game), nameof(Game.Logout))]

@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.1.1";
+        internal const string ModVersion = "1.1.3";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -93,7 +93,7 @@ namespace PortalStations
             portalPlatform.RequiredItems.Add("GreydwarfEye", 10, true);
             portalPlatform.Category.Set(BuildPieceCategory.Misc);
             portalPlatform.Crafting.Set(CraftingTable.Workbench);
-            MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalPlatform.Prefab.transform, "model").gameObject);
+            // MaterialReplacer.RegisterGameObjectForShaderSwap(Utils.FindChild(portalPlatform.Prefab.transform, "model").gameObject, MaterialReplacer.ShaderType.RockShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalPlatform.Prefab.transform, "vanilla_effects").gameObject);
             portalPlatform.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(portalPlatform.Prefab);
@@ -138,7 +138,6 @@ namespace PortalStations
         private void Update()
         {
             PortalStationGUI.UpdateGUI();
-            PersonalTeleportationGUI.UpdatePersonalGUI();
         }
         private void OnDestroy()
         {
@@ -185,7 +184,10 @@ namespace PortalStations
         public static ConfigEntry<Toggle> _DeviceUseFuel = null!;
         public static ConfigEntry<int> _DevicePerFuelAmount = null!;
         public static ConfigEntry<int> _DeviceAdditionalDistancePerUpgrade = null!;
-        public static ConfigEntry<Toggle> _PortalToPlayers = null!;
+        // public static ConfigEntry<Toggle> _PortalToPlayers = null!;
+
+        public static ConfigEntry<Toggle> _PortalUseFuel = null!;
+        public static ConfigEntry<int> _PortalPerFuelAmount = null!;
 
         public static ConfigEntry<string> _TinKey = null!;
         public static ConfigEntry<string> _CopperKey = null!;
@@ -224,9 +226,14 @@ namespace PortalStations
             _DeviceFuel = config("Settings", "3 - Portable Portal Fuel", "SurtlingCore", "Set the prefab name of the fuel item required to teleport");
             _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<int>(1, 50)));
             _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<int>(1, 50)));
-            _PortalToPlayers = config("Settings", "6 - Portable Portal To Players", Toggle.On, "If on, portable portal shows players as destination options");
+            // _PortalToPlayers = config("Settings", "6 - Portable Portal To Players", Toggle.On, "If on, portable portal shows players as destination options");
             _OnlyAdminRename = config("Settings", "7 - Only Admin Renames", Toggle.Off,
                 "If on, only admins with no cost cheat on can rename portals");
+
+            _PortalUseFuel = config("Settings", "8 - Portal Use Fuel", Toggle.Off,
+                "If on, static portals require fuel");
+            _PortalPerFuelAmount = config("Settings", "9 - Portal Fuel Distance", 1,
+                new ConfigDescription("Fuel cost per distance", new AcceptableValueRange<int>(1, 101)));
 
             _PortalVolume = config("Settings", "8 - Portal Volume", 0.8f, new ConfigDescription("Set the volume of the portal effects", new AcceptableValueRange<float>(0f, 1f)),false);
             _PersonalPortalDurabilityDrain = config("Settings", "9 - Portable Portal Durability Drain", 10.0f,

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 using static PortalStations.PortalStationsPlugin;
 
 namespace PortalStations.Stations;
@@ -47,5 +49,21 @@ public static class Teleportation
             if (!keys.Contains(key) && !ZoneSystem.instance.GetGlobalKey(key)) return false;
         }
         return true;
+    }
+    
+    public static int GetFuelAmount(Humanoid user, ItemDrop fuelItem) => user.GetInventory().CountItems(fuelItem.m_itemData.m_shared.m_name);
+    public static void ConsumeFuel(Player user, ItemDrop fuelItem, int amount) => user.GetInventory().RemoveItem(fuelItem.m_itemData.m_shared.m_name, amount, -1, false);
+    public static int CalculateFuelCost(ItemDrop.ItemData deviceData, float distance)
+    {
+        if (_DeviceUseFuel.Value is Toggle.Off) return 0;
+    
+        float travelDistancePerFuelItem = _DevicePerFuelAmount.Value + (Math.Max(0, deviceData.m_quality - 1) * _DeviceAdditionalDistancePerUpgrade.Value);
+    
+        return Mathf.Max(1, Mathf.CeilToInt((distance / 2) / travelDistancePerFuelItem));
+    }
+
+    public static int CalculateFuelCost(float distance)
+    {
+        return _PortalUseFuel.Value is Toggle.Off ? 0 : Mathf.Max(1, Mathf.CeilToInt(distance / 2) / _PortalPerFuelAmount.Value );
     }
 }
