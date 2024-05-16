@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using JetBrains.Annotations;
+using PortalStations;
 using UnityEngine;
 
 namespace PieceManager
@@ -145,6 +146,18 @@ namespace PieceManager
                     if (material != null)
                     {
                         material.shader = GetShaderForType(material.shader, shaderType, material.shader.name);
+                        if (shaderType is ShaderType.RockShader && go.transform.parent.name == "portalPlatform" )
+                        {
+                            material.SetTexture("_MossTex", PortalStationsPlugin.PlatformMoss);
+                            // material.SetFloat("_MossGloss", 0f);
+                            material.SetFloat("_MossTransition", 0.9f);
+                            material.SetFloat("_MossBlend", 0.1f);
+                            material.SetFloat("_MossNormal", 0.263f);
+                            material.SetTexture("_BumpMap", PortalStationsPlugin.PlatformNormal);
+                            material.SetFloat("_AddSnow", 1f);
+                            material.SetFloat("_AddRain", 1f);
+                            material.SetFloat("_TriplanarScale", 1f);
+                        }
                     }
                 }
             }

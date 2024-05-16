@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using BepInEx;
 using UnityEngine;
 using UnityEngine.UI;
@@ -189,6 +190,12 @@ public static class PortalStationGUI
             if (FavoriteList.Contains(zdo)) continue;
             CreateDestination(zdo, user, deviceData, filter, fuel, false);
         }
+
+        if (_PortalToPlayers.Value is PortalStationsPlugin.Toggle.Off) return;
+        foreach (Player player in Player.GetAllPlayers())
+        {
+            CreateDestination(player, user, deviceData, filter, fuel);
+        }
     }
 
 
@@ -231,6 +238,12 @@ public static class PortalStationGUI
             if (FavoriteList.Contains(zdo)) continue;
             CreateDestination(zdo, znv, filter, fuel, false);
         }
+
+        if (_PortalToPlayers.Value is PortalStationsPlugin.Toggle.Off) return;
+        foreach (Player player in Player.GetAllPlayers())
+        {
+            CreateDestination(player, filter, fuel);
+        }
     }
 
     private static List<ZDO> FindDestinations()
@@ -238,7 +251,6 @@ public static class PortalStationGUI
         List<ZDO> Destinations = new();
         foreach (string prefab in Stations.PrefabsToSearch)
         {
-            if (prefab == "Player") continue;
             int amount = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(prefab, Destinations, ref amount))
             {
@@ -266,7 +278,7 @@ public static class PortalStationGUI
         Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = fuel.m_itemData.GetIcon();
         Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
 
-        if (PortalStationsPlugin._DeviceUseFuel.Value is PortalStationsPlugin.Toggle.Off)
+        if (_DeviceUseFuel.Value is PortalStationsPlugin.Toggle.Off)
         {
             Utils.FindChild(item.transform, "$part_FuelElement").gameObject.SetActive(false);
         }
@@ -283,7 +295,61 @@ public static class PortalStationGUI
             TeleportWithCost(zdo, cost, fuel);
         });    
     }
+    
+    private static void CreateDestination(Player player, Humanoid user, ItemDrop.ItemData device, string filter, ItemDrop fuel)
+    {
+        if (player.GetZDOID() == user.GetZDOID()) return;
+        string name = player.GetPlayerName();
+        if (name.IsNullOrWhiteSpace()) return;
+        if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
+        int cost = Teleportation.CalculateFuelCost(device, Vector3.Distance(player.transform.position, user.transform.position));
 
+        GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
+        Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
+        Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = fuel.m_itemData.GetIcon();
+        Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
+
+        if (_PortalUseFuel.Value is PortalStationsPlugin.Toggle.Off)
+        {
+            Utils.FindChild(item.transform, "$part_FuelElement").gameObject.SetActive(false);
+        }
+        
+        Transform favorite = Utils.FindChild(item.transform, "$part_FavoriteButton");
+        favorite.gameObject.SetActive(false);
+        favorite.GetChild(0).GetComponent<Image>().color = Color.black;
+        favorite.GetComponent<Button>().interactable = false;
+        Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
+        {
+            TeleportWithCost(player.transform.position, cost, fuel);
+        });
+    }
+
+    private static void CreateDestination(Player player, string filter, ItemDrop fuel)
+    {
+        if (player.GetZDOID() == Player.m_localPlayer.GetZDOID()) return;
+        string name = player.GetPlayerName();
+        if (name.IsNullOrWhiteSpace()) return;
+        if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
+        int cost = Teleportation.CalculateFuelCost(Vector3.Distance(player.transform.position,
+            Player.m_localPlayer.transform.position));
+        GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
+        Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
+        Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = fuel.m_itemData.GetIcon();
+        Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
+
+        if (_PortalUseFuel.Value is PortalStationsPlugin.Toggle.Off)
+        {
+            Utils.FindChild(item.transform, "$part_FuelElement").gameObject.SetActive(false);
+        }
+        
+        Transform favorite = Utils.FindChild(item.transform, "$part_FavoriteButton");
+        favorite.GetChild(0).GetComponent<Image>().color = Color.black;
+        favorite.GetComponent<Button>().interactable = false;
+        Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
+        {
+            TeleportWithCost(player.transform.position, cost, fuel);
+        });
+    }
     private static void CreateDestination(ZDO zdo, ZNetView znv, string filter, ItemDrop fuel, bool isFavorite)
     {
         if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) return;
@@ -314,10 +380,27 @@ public static class PortalStationGUI
         Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
         {
             TeleportWithCost(zdo, cost, fuel);
-            // TeleportToDestination(zdo);
         });
     }
 
+    private static void TeleportWithCost(Vector3 location, int cost, ItemDrop fuel)
+    {
+        if (!Teleportation.IsTeleportable(Player.m_localPlayer))
+        {
+            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$msg_noteleport");
+            return;
+        }
+        int inventoryFuel = Teleportation.GetFuelAmount(Player.m_localPlayer, fuel);
+        if (inventoryFuel < cost && !Player.m_localPlayer.NoCostCheat())
+        {
+            Player.m_localPlayer.Message(MessageHud.MessageType.Center, _NotEnoughFuelText.Value);
+            return;
+        }
+        if (!Player.m_localPlayer.NoCostCheat()) Teleportation.ConsumeFuel(Player.m_localPlayer, fuel, cost);
+        Player.m_localPlayer.TeleportTo(location + new Vector3(0f, portal_exit_distance, 0f),
+            Player.m_localPlayer.transform.rotation, true);
+        HidePortalGUI();
+    }
     private static void TeleportWithCost(ZDO zdo, int cost, ItemDrop fuel)
     {
         if (!Teleportation.IsTeleportable(Player.m_localPlayer))
@@ -336,17 +419,6 @@ public static class PortalStationGUI
         Player.m_localPlayer.TeleportTo(zdo.GetPosition() + new Vector3(0f, portal_exit_distance, 0f), zdo.GetRotation(), true);
         HidePortalGUI();
     }
-
-    // private static void TeleportToDestination(ZDO zdo)
-    // {
-    //     if (!Teleportation.IsTeleportable(Player.m_localPlayer))
-    //     {
-    //         Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$msg_noteleport");
-    //         return;
-    //     }
-    //     Player.m_localPlayer.TeleportTo(zdo.GetPosition() + new Vector3(0f, portal_exit_distance, 0f), zdo.GetRotation(), true);
-    //     HidePortalGUI();
-    // }
     public static void HidePortalGUI()
     {
         if (PortalGUI) PortalGUI.SetActive(false);

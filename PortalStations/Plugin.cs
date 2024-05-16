@@ -20,7 +20,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.1.3";
+        internal const string ModVersion = "1.1.5";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -34,11 +34,17 @@ namespace PortalStations
         public static AssetBundle _asset = null!;
         public enum Toggle { On = 1, Off = 0 }
 
+        public static Texture PlatformMoss = null!;
+        public static Texture PlatformNormal = null!;
+
         public void Awake()
         {
             _plugin = this;
             _asset = GetAssetBundle("portal_station_assets");
-            
+
+            PlatformMoss = _asset.LoadAsset<Texture>("tex_stone_moss");
+            PlatformNormal = _asset.LoadAsset<Texture>("normal_portal_platform");
+
             _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
                 "If on, the configuration is locked and can be changed by server admins only.");
             _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
@@ -64,7 +70,7 @@ namespace PortalStations
             PortalStation.RequiredItems.Add("GreydwarfEye", 10, true);
             PortalStation.Category.Set(BuildPieceCategory.Misc);
             PortalStation.Crafting.Set(CraftingTable.Workbench);
-            MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab.transform.Find("Visual Root").gameObject, MaterialReplacer.ShaderType.PieceShader);
+            MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab.transform.Find("Visual Root").gameObject, MaterialReplacer.ShaderType.RockShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStation.Prefab.transform, "vanilla_effects").gameObject);
             PortalStation.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(PortalStation.Prefab);
@@ -93,7 +99,7 @@ namespace PortalStations
             portalPlatform.RequiredItems.Add("GreydwarfEye", 10, true);
             portalPlatform.Category.Set(BuildPieceCategory.Misc);
             portalPlatform.Crafting.Set(CraftingTable.Workbench);
-            // MaterialReplacer.RegisterGameObjectForShaderSwap(Utils.FindChild(portalPlatform.Prefab.transform, "model").gameObject, MaterialReplacer.ShaderType.RockShader);
+            MaterialReplacer.RegisterGameObjectForShaderSwap(Utils.FindChild(portalPlatform.Prefab.transform, "model").gameObject, MaterialReplacer.ShaderType.RockShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalPlatform.Prefab.transform, "vanilla_effects").gameObject);
             portalPlatform.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(portalPlatform.Prefab);
@@ -184,7 +190,7 @@ namespace PortalStations
         public static ConfigEntry<Toggle> _DeviceUseFuel = null!;
         public static ConfigEntry<int> _DevicePerFuelAmount = null!;
         public static ConfigEntry<int> _DeviceAdditionalDistancePerUpgrade = null!;
-        // public static ConfigEntry<Toggle> _PortalToPlayers = null!;
+        public static ConfigEntry<Toggle> _PortalToPlayers = null!;
 
         public static ConfigEntry<Toggle> _PortalUseFuel = null!;
         public static ConfigEntry<int> _PortalPerFuelAmount = null!;
@@ -226,7 +232,7 @@ namespace PortalStations
             _DeviceFuel = config("Settings", "3 - Portable Portal Fuel", "SurtlingCore", "Set the prefab name of the fuel item required to teleport");
             _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<int>(1, 50)));
             _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<int>(1, 50)));
-            // _PortalToPlayers = config("Settings", "6 - Portable Portal To Players", Toggle.On, "If on, portable portal shows players as destination options");
+            _PortalToPlayers = config("Settings", "6 - Portal To Players", Toggle.Off, "If on, portal shows players as destination options");
             _OnlyAdminRename = config("Settings", "7 - Only Admin Renames", Toggle.Off,
                 "If on, only admins with no cost cheat on can rename portals");
 

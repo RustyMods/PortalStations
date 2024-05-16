@@ -8,7 +8,7 @@ namespace PortalStations.Stations;
 public static class Stations
 {
     private static readonly List<ZDO> TempZDOs = new();
-    public static readonly List<string> PrefabsToSearch = new() { "Player" };
+    public static readonly List<string> PrefabsToSearch = new();
     public static void InitCoroutine() => _plugin.StartCoroutine(SendStationsToClient());
     private static IEnumerator SendStationsToClient()
     {
