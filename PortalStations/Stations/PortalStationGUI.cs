@@ -192,6 +192,8 @@ public static class PortalStationGUI
         }
 
         if (_PortalToPlayers.Value is PortalStationsPlugin.Toggle.Off) return;
+        
+        
         foreach (Player player in Player.GetAllPlayers())
         {
             CreateDestination(player, user, deviceData, filter, fuel);
@@ -239,10 +241,11 @@ public static class PortalStationGUI
             CreateDestination(zdo, znv, filter, fuel, false);
         }
 
-        if (_PortalToPlayers.Value is PortalStationsPlugin.Toggle.Off) return;
-        foreach (Player player in Player.GetAllPlayers())
+        if (_PortalToPlayers.Value is PortalStationsPlugin.Toggle.Off || !ZNet.instance) return;
+
+        foreach (var peer in ZNet.instance.GetPeers())
         {
-            CreateDestination(player, filter, fuel);
+            CreatePlayerDestination(peer, filter, fuel);
         }
     }
 
@@ -324,13 +327,13 @@ public static class PortalStationGUI
         });
     }
 
-    private static void CreateDestination(Player player, string filter, ItemDrop fuel)
+    private static void CreatePlayerDestination(ZNetPeer peer, string filter, ItemDrop fuel)
     {
-        if (player.GetZDOID() == Player.m_localPlayer.GetZDOID()) return;
-        string name = player.GetPlayerName();
+        if (peer.m_characterID == Player.m_localPlayer.GetZDOID()) return;
+        string name = peer.m_playerName;
         if (name.IsNullOrWhiteSpace()) return;
         if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
-        int cost = Teleportation.CalculateFuelCost(Vector3.Distance(player.transform.position,
+        int cost = Teleportation.CalculateFuelCost(Vector3.Distance(peer.m_refPos,
             Player.m_localPlayer.transform.position));
         GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
         Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
@@ -347,13 +350,43 @@ public static class PortalStationGUI
         favorite.GetComponent<Button>().interactable = false;
         Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
         {
-            TeleportWithCost(player.transform.position, cost, fuel);
+            TeleportWithCost(peer.m_refPos, cost, fuel);
         });
     }
+
+    // private static void CreateDestination(Player player, string filter, ItemDrop fuel)
+    // {
+    //     if (player.GetZDOID() == Player.m_localPlayer.GetZDOID()) return;
+    //     string name = player.GetPlayerName();
+    //     if (name.IsNullOrWhiteSpace()) return;
+    //     if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
+    //     int cost = Teleportation.CalculateFuelCost(Vector3.Distance(player.transform.position,
+    //         Player.m_localPlayer.transform.position));
+    //     GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
+    //     Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
+    //     Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = fuel.m_itemData.GetIcon();
+    //     Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
+    //
+    //     if (_PortalUseFuel.Value is PortalStationsPlugin.Toggle.Off)
+    //     {
+    //         Utils.FindChild(item.transform, "$part_FuelElement").gameObject.SetActive(false);
+    //     }
+    //     
+    //     Transform favorite = Utils.FindChild(item.transform, "$part_FavoriteButton");
+    //     favorite.GetChild(0).GetComponent<Image>().color = Color.black;
+    //     favorite.GetComponent<Button>().interactable = false;
+    //     Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
+    //     {
+    //         TeleportWithCost(player.transform.position, cost, fuel);
+    //     });
+    // }
     private static void CreateDestination(ZDO zdo, ZNetView znv, string filter, ItemDrop fuel, bool isFavorite)
     {
         if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) return;
-        if (!zdo.GetBool(PortalStation._prop_station_code) && zdo.GetLong(ZDOVars.s_creator) != Player.m_localPlayer.GetPlayerID()) return;
+        
+        bool inGroup = Groups.API.GroupPlayers().Exists(x => x.peerId == zdo.GetLong(ZDOVars.s_creator));
+        
+        if (!zdo.GetBool(PortalStation._prop_station_code) && zdo.GetLong(ZDOVars.s_creator) != Player.m_localPlayer.GetPlayerID() && !inGroup) return;
         string name = zdo.GetString(PortalStation._prop_station_name);
         if (name.IsNullOrWhiteSpace()) return;
         if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using BepInEx.Configuration;
+using HarmonyLib;
 using UnityEngine;
 using static PortalStations.PortalStationsPlugin;
 
@@ -7,21 +9,33 @@ namespace PortalStations.Stations;
 
 public static class Teleportation
 {
-    private static string GetTeleportKey(string itemName)
+    private static readonly Dictionary<string, ConfigEntry<string>> m_teleportKeys = new();
+
+    [HarmonyPriority(Priority.Last)]
+    [HarmonyPatch(typeof(ObjectDB), nameof(ObjectDB.Awake))]
+    private static class CreateConfigsForRestrictiveItems
     {
-        switch (itemName)
+        private static void Postfix(ObjectDB __instance)
         {
-            case "$item_tinore" or "$item_tin": return _TinKey.Value;
-            case "$item_copperore" or "$item_copperscrap" or "$item_copper": return _CopperKey.Value;
-            case "$item_bronze" or "$item_bronzescrap": return _BronzeKey.Value;
-            case "$item_iron" or "$item_ironore" or "$item_ironscrap": return _IronKey.Value;
-            case "$item_silver" or "$item_silverore": return _SilverKey.Value;
-            case "$item_blackmetalscrap" or "$item_blackmetal": return _BlackMetalKey.Value;
-            case "$item_dragonegg": return _DragonEggKey.Value;
-            case "$item_dvergrneedle": return _DvergerNeedleKey.Value;
-            case "$item_flametal" or "$item_flametalore": return _FlameMetalKey.Value;
-            default: return "none";
+            if (!ZNetScene.instance) return;
+            CreateOreConfigs(__instance);
         }
+    }
+    private static void CreateOreConfigs(ObjectDB __instance)
+    {
+        foreach (GameObject prefab in __instance.m_items)
+        {
+            if (!prefab.TryGetComponent(out ItemDrop component)) continue;
+            if (component.m_itemData.m_shared.m_teleportable) continue;
+            var config = _plugin.config("Teleport Keys", $"{prefab.name}", "",
+                $"Set the defeat key to enable teleporting {prefab.name}");
+            m_teleportKeys[component.m_itemData.m_shared.m_name] = config;
+        }
+    }
+
+    private static string GetKey(string itemName)
+    {
+        return m_teleportKeys.TryGetValue(itemName, out ConfigEntry<string> config) ? config.Value : "none";
     }
 
     public static bool IsTeleportable(Player player)
@@ -39,7 +53,7 @@ public static class Teleportation
         List<string> keys = ZoneSystem.instance.GetGlobalKeys();
         foreach (ItemDrop.ItemData itemData in inventory.m_inventory)
         {
-            string key = GetTeleportKey(itemData.m_shared.m_name);
+            string key = GetKey(itemData.m_shared.m_name);
             if (key == "none")
             {
                 if (!itemData.m_shared.m_teleportable) return false;
