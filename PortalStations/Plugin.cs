@@ -21,11 +21,11 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.1.7";
+        internal const string ModVersion = "1.1.8";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
-        private static string ConfigFileName = ModGUID + ".cfg";
-        private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
+        private static readonly string ConfigFileName = ModGUID + ".cfg";
+        private static readonly string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
         internal static string ConnectionError = "";
         private readonly Harmony _harmony = new(ModGUID);
         public static readonly ManualLogSource PortalStationsLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
@@ -33,6 +33,7 @@ namespace PortalStations
 
         public static PortalStationsPlugin _plugin = null!;
         public static AssetBundle _asset = null!;
+        public static GameObject _root = null!;
         public enum Toggle { On = 1, Off = 0 }
 
         public static Texture PlatformMoss = null!;
@@ -42,6 +43,9 @@ namespace PortalStations
         {
             _plugin = this;
             _asset = GetAssetBundle("portal_station_assets");
+            _root = new GameObject("root");
+            _root.SetActive(false);
+            DontDestroyOnLoad(_root);
 
             PlatformMoss = _asset.LoadAsset<Texture>("tex_stone_moss");
             PlatformNormal = _asset.LoadAsset<Texture>("normal_portal_platform");
@@ -53,11 +57,14 @@ namespace PortalStations
             InitPieces();
             InitItems();
             InitConfigs();
-            Stations.Stations.InitCoroutine();
             
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
             SetupWatcher();
+
+            _harmony.Patch(AccessTools.DeclaredMethod(typeof(ZNetScene), nameof(ZNetScene.Awake)),
+                postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(PortalStationsPlugin),
+                    nameof(ClonedPieces))));
         }
 
         private void InitPieces()
@@ -71,7 +78,6 @@ namespace PortalStations
             PortalStation.RequiredItems.Add("GreydwarfEye", 10, true);
             PortalStation.Category.Set(BuildPieceCategory.Misc);
             PortalStation.Crafting.Set(CraftingTable.Workbench);
-            // MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab.transform.Find("Visual Root").gameObject, MaterialReplacer.ShaderType.RockShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStation.Prefab.transform, "vanilla_effects").gameObject);
             PortalStation.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(PortalStation.Prefab);
@@ -120,6 +126,43 @@ namespace PortalStations
             portalStationDoor.Prefab.AddComponent<PortalStation>();
             PieceEffectsSetter.PrefabsToSet.Add(portalStationDoor.Prefab);
             Stations.Stations.PrefabsToSearch.Add(portalStationDoor.Prefab.name);
+        }
+
+        public static void ClonedPieces(ZNetScene __instance)
+        {
+            if (!__instance) return;
+
+            GameObject Hammer = __instance.GetPrefab("Hammer");
+            if (!Hammer) return;
+            if (!Hammer.TryGetComponent(out ItemDrop component)) return;
+            
+            GameObject portalStone = __instance.GetPrefab("portal_stone");
+            if (!portalStone) return;
+
+            var clone = Instantiate(portalStone, _root.transform, false);
+            clone.name = "PortalStation_Stone";
+
+            Destroy(clone.GetComponent<TeleportWorld>());
+            clone.AddComponent<PortalStation>();
+            
+            Destroy(clone.transform.Find("TELEPORT").gameObject);
+
+            if (!clone.TryGetComponent(out Piece piece)) return;
+            piece.m_name = "Stone Portal Station";
+            Stations.Stations.PrefabsToSearch.Add(clone.name);
+            
+            if (!__instance.m_prefabs.Contains(clone))
+            {
+                __instance.m_prefabs.Add(clone);
+            }
+
+            __instance.m_namedPrefabs[clone.name.GetStableHashCode()] = clone;
+
+            if (!component.m_itemData.m_shared.m_buildPieces.m_pieces.Contains(clone))
+            {
+                component.m_itemData.m_shared.m_buildPieces.m_pieces.Add(clone);
+            }
+            Stations.Stations.InitCoroutine();
         }
         private void InitItems()
         {
@@ -288,19 +331,6 @@ namespace PortalStations
             [UsedImplicitly] public string? Category = null!;
             [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer = null!;
         }
-
-        // class AcceptableShortcuts : AcceptableValueBase
-        // {
-        //     public AcceptableShortcuts() : base(typeof(KeyboardShortcut))
-        //     {
-        //     }
-        //
-        //     public override object Clamp(object value) => value;
-        //     public override bool IsValid(object value) => true;
-        //
-        //     public override string ToDescriptionString() =>
-        //         "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
-        // }
 
         #endregion
     }

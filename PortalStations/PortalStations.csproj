@@ -79,6 +79,9 @@
         <Reference Include="Groups">
           <HintPath>Libs\GroupsAPI.dll</HintPath>
         </Reference>
+        <Reference Include="Guilds">
+          <HintPath>Libs\GuildsAPI.dll</HintPath>
+        </Reference>
         <Reference Include="ServerSync">
             <HintPath>Libs\ServerSync.dll</HintPath>
         </Reference>
@@ -129,6 +132,7 @@
         <Compile Include="Managers\PieceManager.cs" />
         <Compile Include="Plugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
+        <Compile Include="Stations\LoadUI.cs" />
         <Compile Include="Stations\Patches.cs" />
         <Compile Include="Stations\PersonalTeleportationDevice.cs" />
         <Compile Include="Stations\PortalStation.cs" />
@@ -151,6 +155,7 @@
         <Content Include="Libs\GroupsAPI.dll">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Content Include="Libs\GuildsAPI.dll" />
         <Content Include="Libs\ServerSync.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
@@ -158,7 +163,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
-        <PackageReference Include="YamlDotNet" Version="15.1.0" />
+        <PackageReference Include="YamlDotNet" Version="15.1.6" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

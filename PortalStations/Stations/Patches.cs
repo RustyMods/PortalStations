@@ -12,7 +12,7 @@ public static class Patches
     {
         private static void Postfix(InventoryGui __instance)
         {
-            InitGUI(__instance);
+            LoadUI.InitGUI(__instance);
         }
     }
     

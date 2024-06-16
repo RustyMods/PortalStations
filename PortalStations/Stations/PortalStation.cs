@@ -26,7 +26,13 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 
     private void Awake()
     {
-        GameObject portalEffects = Utils.FindChild(transform, "Portal Effects").gameObject;
+        Transform parent = Utils.FindChild(transform, "Portal Effects");
+        if (!parent)
+        {
+            parent = Utils.FindChild(transform, "_target_found_red");
+            if (!parent) return;
+        }
+        GameObject portalEffects = parent.gameObject;
 
         m_particles = portalEffects.GetComponentsInChildren<ParticleSystem>();
         m_light = portalEffects.GetComponentInChildren<Light>();
