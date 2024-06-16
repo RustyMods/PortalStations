@@ -231,7 +231,6 @@ public static class PortalStationGUI
         });
     }
     private static bool isInGroup(long creator) => Groups.API.FindGroupMemberByPlayerId(creator) != null;
-
     private static bool isInGuild(Player creator)
     {
         Guild? guild = API.GetOwnGuild();
@@ -243,7 +242,7 @@ public static class PortalStationGUI
     {
         if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) return;
         long creator = zdo.GetLong(ZDOVars.s_creator);
-        if (!isPublic(zdo) && !isCreator(creator) && !isInGroup(creator) || !isInGuild(Player.GetPlayer(creator))) return;
+        if (!isPublic(zdo) && !isCreator(creator) && !isInGroup(creator) && !isInGuild(Player.GetPlayer(creator))) return;
         string name = zdo.GetString(PortalStation._prop_station_name);
         if (name.IsNullOrWhiteSpace()) return;
         if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
