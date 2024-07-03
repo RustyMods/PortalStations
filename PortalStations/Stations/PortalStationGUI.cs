@@ -123,12 +123,14 @@ public static class PortalStationGUI
         ItemDrop? fuel = GetFuelItem();
         if (fuel == null) return;
         List<ZDO> Destinations = SortStations(FindDestinations());
-        List<ZDO> FavoriteList = Destinations.FindAll(x => Favorites.Contains(x.GetString(PortalStation._prop_station_name)));
-        foreach (ZDO zdo in FavoriteList) GetDestination(zdo, znv, filter, fuel, true);
 
-        foreach (ZDO zdo in Destinations)
+        foreach (ZDO zdo in Destinations.Where(x => Favorites.Contains(x.GetString(PortalStation._prop_station_name))))
         {
-            if (FavoriteList.Contains(zdo)) continue;
+            GetDestination(zdo, znv, filter, fuel, true);
+        }
+
+        foreach (ZDO zdo in Destinations.Where(x => !Favorites.Contains(x.GetString(PortalStation._prop_station_name))))
+        {
             GetDestination(zdo, znv, filter, fuel, false);
         }
 
@@ -216,6 +218,7 @@ public static class PortalStationGUI
     private static void CreatePlayerDestination(ZNetPeer peer, string filter, ItemDrop fuel)
     {
         if (peer.m_characterID == Player.m_localPlayer.GetZDOID()) return;
+        if (peer.m_playerName == "Stranger") return;
         string name = peer.m_playerName;
         if (name.IsNullOrWhiteSpace()) return;
         if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
@@ -234,7 +237,7 @@ public static class PortalStationGUI
     private static bool isInGuild(Player creator)
     {
         Guild? guild = API.GetOwnGuild();
-        return guild != null && guild.Members.Any(member => member.Key.name == creator.m_name);
+        return guild != null && guild.Members.Any(member => member.Key.name == creator.GetPlayerName());
     }
     private static bool isPublic(ZDO zdo) => zdo.GetBool(PortalStation._prop_station_code);
     private static bool isCreator(long creator) => creator == Player.m_localPlayer.GetPlayerID();
@@ -260,30 +263,6 @@ public static class PortalStationGUI
             TeleportWithCost(zdo, cost, fuel);
 
         });
-
-        // int cost = Teleportation.CalculateFuelCost(Vector3.Distance(zdo.GetPosition(), Player.m_localPlayer.transform.position));
-        //
-        // GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
-        // Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
-        // Utils.FindChild(item.transform, "$part_FuelImage").GetComponent<Image>().sprite = fuel.m_itemData.GetIcon();
-        // Utils.FindChild(item.transform, "$part_FuelCount").GetComponent<Text>().text = cost.ToString();
-        //
-        // if (_PortalUseFuel.Value is PortalStationsPlugin.Toggle.Off)
-        // {
-        //     Utils.FindChild(item.transform, "$part_FuelElement").gameObject.SetActive(false);
-        // }
-        //
-        // Transform favorite = Utils.FindChild(item.transform, "$part_FavoriteButton");
-        // favorite.GetChild(0).GetComponent<Image>().color = isFavorite ? Color.white : Color.black;
-        // favorite.GetComponent<Button>().onClick.AddListener(() =>
-        // {
-        //     SetFavorite(zdo);
-        //     GetDestinations(znv, filter);
-        // });
-        // Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
-        // {
-        //     TeleportWithCost(zdo, cost, fuel);
-        // });
     }
     private static void CreateDestination(int cost, string name, ItemDrop fuel, out Image image, out Button favoriteButton, out Button teleportButton)
     {
