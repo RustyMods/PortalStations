@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,11 +18,12 @@ using CraftingTable = PieceManager.CraftingTable;
 namespace PortalStations
 {
     [BepInDependency("org.bepinex.plugins.groups", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("org.bepinex.plugins.guilds", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.2.0";
+        internal const string ModVersion = "1.2.1";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -44,8 +46,8 @@ namespace PortalStations
             _plugin = this;
             _asset = GetAssetBundle("portal_station_assets");
             _root = new GameObject("root");
-            _root.SetActive(false);
             DontDestroyOnLoad(_root);
+            _root.SetActive(false);
 
             PlatformMoss = _asset.LoadAsset<Texture>("tex_stone_moss");
             PlatformNormal = _asset.LoadAsset<Texture>("normal_portal_platform");
@@ -131,38 +133,86 @@ namespace PortalStations
         public static void ClonedPieces(ZNetScene __instance)
         {
             if (!__instance) return;
+            Clone(__instance, "portal_stone", "PortalStation_Stone", "Stone Portal Station");
+            Clone(__instance, "portal_wood", "PortalStation_Wood", "Wood Portal Station");
+            Clone(__instance, "portal", "PortalStation_Blue", "Portal Station Stone");
+            Stations.Stations.InitCoroutine();
+        }
 
-            GameObject Hammer = __instance.GetPrefab("Hammer");
-            if (!Hammer) return;
-            if (!Hammer.TryGetComponent(out ItemDrop component)) return;
-            
-            GameObject portalStone = __instance.GetPrefab("portal_stone");
-            if (!portalStone) return;
+        private static void Clone(ZNetScene __instance, string prefabName, string newName, string displayName)
+        {
+            GameObject prefab = __instance.GetPrefab(prefabName);
+            if (!prefab) return;
 
-            var clone = Instantiate(portalStone, _root.transform, false);
-            clone.name = "PortalStation_Stone";
+            GameObject? clone = Instantiate(prefab, _root.transform, false);
+            clone.name = newName;
 
-            Destroy(clone.GetComponent<TeleportWorld>());
-            clone.AddComponent<PortalStation>();
-            
-            Destroy(clone.transform.Find("TELEPORT").gameObject);
+            TeleportWorld world = clone.GetComponent<TeleportWorld>();
+            PortalStation portal = clone.AddComponent<PortalStation>();
+            portal.m_model = clone.GetComponentInChildren<MeshRenderer>();
+            portal.m_baseColor = world.m_colorTargetfound;
+            Destroy(world);
+            TeleportWorldTrigger? teleport = clone.GetComponentInChildren<TeleportWorldTrigger>();
+            if (teleport) Destroy(teleport.gameObject);
+            EffectFade fade = clone.GetComponentInChildren<EffectFade>();
+            if (fade) Destroy(fade);
 
             if (!clone.TryGetComponent(out Piece piece)) return;
-            piece.m_name = "Stone Portal Station";
+
+            ConfigEntry<string> display = _plugin.config(newName, "Display Name", displayName, "Set display name");
+            piece.m_name = display.Value;
+            display.SettingChanged += (sender, args) => piece.m_name = display.Value;
+            ConfigEntry<string> recipe = _plugin.config(newName, "Recipe", "GreydwarfEye:10,FineWood:20,SurtlingCore:2", "Set recipe");
+            piece.m_resources = GetRequirements(recipe.Value).ToArray();
+            recipe.SettingChanged += (sender, args) => piece.m_resources = GetRequirements(recipe.Value).ToArray();
             Stations.Stations.PrefabsToSearch.Add(clone.name);
             
-            if (!__instance.m_prefabs.Contains(clone))
+            RegisterToScene(clone);
+            RegisterToHammer(clone);
+        }
+
+        private static List<Piece.Requirement> GetRequirements(string config)
+        {
+            List<Piece.Requirement> output = new();
+            foreach (var input in config.Split(','))
             {
-                __instance.m_prefabs.Add(clone);
+                var info = input.Split(':');
+                if (info.Length != 2) continue;
+                GameObject prefab = ZNetScene.instance.GetPrefab(info[0]);
+                if (!prefab) continue;
+                if (!prefab.TryGetComponent(out ItemDrop item)) continue;
+                output.Add(new Piece.Requirement()
+                {
+                    m_resItem = item,
+                    m_amount = int.TryParse(info[1], out int amount) ? amount : 1,
+                    m_recover = true,
+                    m_amountPerLevel = 1,
+                    m_extraAmountOnlyOneIngredient = 1
+                });
             }
 
-            __instance.m_namedPrefabs[clone.name.GetStableHashCode()] = clone;
+            return output;
+        }
 
-            if (!component.m_itemData.m_shared.m_buildPieces.m_pieces.Contains(clone))
+        private static void RegisterToHammer(GameObject prefab)
+        {
+            GameObject Hammer = ZNetScene.instance.GetPrefab("Hammer");
+            if (!Hammer) return;
+            if (!Hammer.TryGetComponent(out ItemDrop component)) return;
+            if (!component.m_itemData.m_shared.m_buildPieces.m_pieces.Contains(prefab))
             {
-                component.m_itemData.m_shared.m_buildPieces.m_pieces.Add(clone);
+                component.m_itemData.m_shared.m_buildPieces.m_pieces.Add(prefab);
             }
-            Stations.Stations.InitCoroutine();
+        }
+
+        private static void RegisterToScene(GameObject prefab)
+        {
+            if (!ZNetScene.instance.m_prefabs.Contains(prefab))
+            {
+                ZNetScene.instance.m_prefabs.Add(prefab);
+            }
+
+            ZNetScene.instance.m_namedPrefabs[prefab.name.GetStableHashCode()] = prefab;
         }
         private void InitItems()
         {

@@ -18,7 +18,10 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
     public Light m_light = null!;
     public AudioSource m_audioSource = null!;
     public Material? m_rune;
+    public MeshRenderer? m_model;
 
+    private bool m_vanilla;
+    
     public Color m_baseColor;
     public float m_lightBaseIntensity;
     public bool m_active = true;
@@ -30,7 +33,11 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         if (!parent)
         {
             parent = Utils.FindChild(transform, "_target_found_red");
-            if (!parent) return;
+            if (!parent)
+            {
+                parent = Utils.FindChild(transform, "_target_found");
+                if (!parent) return;
+            };
         }
         GameObject portalEffects = parent.gameObject;
 
@@ -44,6 +51,11 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
             m_rune = m_runeGlyph.GetComponent<MeshRenderer>().material;
             m_baseColor = m_rune.color;
             m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, 0f);
+        }
+        else if (m_model != null)
+        {
+            m_rune = m_model.material;
+            m_vanilla = true;
         }
 
         if (m_light)
@@ -71,7 +83,6 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 
     public void Update()
     {
-        
         Player closestPlayer = Player.GetClosestPlayer(transform.position, use_distance);
         bool flag = closestPlayer && Teleportation.IsTeleportable(closestPlayer);
         SetActive(flag);
@@ -90,7 +101,14 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 
         if (m_rune != null)
         {
-            m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, m_intensity * 1f);
+            if (m_vanilla)
+            {
+                m_rune.SetColor("_EmissionColor", Color.Lerp(Color.black, m_baseColor, m_intensity));
+            }
+            else
+            {
+                m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, m_intensity * 1f);
+            }
         }
     }
 
