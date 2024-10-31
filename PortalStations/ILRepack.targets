@@ -7,9 +7,6 @@
             <InputAssemblies Include="$(OutputPath)\YamlDotNet.dll" />
             <InputAssemblies Include="$(OutputPath)\GroupsAPI.dll" />
             <InputAssemblies Include="$(OutputPath)\GuildsAPI.dll" />
-            <!-- Only use the line below if you choose to use the DLL and not the classes. If you choose the DLL, be sure to reference and 
-             tell it to copy to output directory-->
-            <!-- <InputAssemblies Include="$(OutputPath)\PieceManager.dll" /> -->
         </ItemGroup>
         <ILRepack Parallel="true" DebugInfo="true" Internalize="true" InputAssemblies="@(InputAssemblies)" OutputFile="$(TargetPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="$(OutputPath)" />
     </Target>

@@ -16,9 +16,7 @@ public static class PortalStationGUI
     private static ItemDrop.ItemData? currentDevice;
     private const float portal_exit_distance = 1.0f;
     public static List<string> Favorites = new();
-
-    private static List<ZDO> SortStations(List<ZDO> list) =>
-        list.OrderBy(zdo => zdo.GetString(PortalStation._prop_station_name)).ToList();
+    private static HashSet<ZDO> SortStations(HashSet<ZDO> list) => new (list.OrderBy(zdo => zdo.GetString(PortalStation._prop_station_name)).ToList());
     public static void OnFilterInput(string input)
     {
         if (currentDevice != null) GetDestinations(Player.m_localPlayer, currentDevice, input);
@@ -57,8 +55,7 @@ public static class PortalStationGUI
     }
     public static bool ShowPortalGUI(ZNetView znv)
     {
-        if (!znv) return false;
-        if (!znv.IsValid()) return false;
+        if (!znv || !znv.IsValid()) return false;
         znv.ClaimOwnership();
         PortalGUI.SetActive(true);
         currentPortalStation = znv;
@@ -86,8 +83,8 @@ public static class PortalStationGUI
         DestroyDestinations();
         ItemDrop? fuel = GetFuelItem();
         if (fuel == null) return;
-        List<ZDO> Destinations = FindDestinations();
-
+        HashSet<ZDO> Destinations = FindDestinations();
+        
         foreach (ZDO zdo in Destinations.Where(x => Favorites.Contains(x.GetString(PortalStation._prop_station_name))))
         {
             CreateDestination(zdo, user, deviceData, filter, fuel, true);
@@ -122,7 +119,7 @@ public static class PortalStationGUI
         DestroyDestinations();
         ItemDrop? fuel = GetFuelItem();
         if (fuel == null) return;
-        List<ZDO> Destinations = SortStations(FindDestinations());
+        HashSet<ZDO> Destinations = SortStations(FindDestinations());
 
         foreach (ZDO zdo in Destinations.Where(x => Favorites.Contains(x.GetString(PortalStation._prop_station_name))))
         {
@@ -141,7 +138,7 @@ public static class PortalStationGUI
             CreatePlayerDestination(peer, filter, fuel);
         }
     }
-    private static List<ZDO> FindDestinations()
+    private static HashSet<ZDO> FindDestinations()
     {
         List<ZDO> Destinations = new();
         foreach (string prefab in Stations.PrefabsToSearch)
@@ -152,7 +149,7 @@ public static class PortalStationGUI
             }
         }
 
-        return Destinations;
+        return new HashSet<ZDO>(Destinations);
     }
     private static void DestroyDestinations()
     {
@@ -234,10 +231,11 @@ public static class PortalStationGUI
         });
     }
     private static bool isInGroup(long creator) => Groups.API.FindGroupMemberByPlayerId(creator) != null;
-    private static bool isInGuild(Player creator)
+    private static bool isInGuild(Player? creator)
     {
         Guild? guild = API.GetOwnGuild();
-        return guild != null && guild.Members.Any(member => member.Key.name == creator.GetPlayerName());
+        if (guild == null || creator == null) return false;
+        return guild.Members.Any(member => member.Key.name == creator.GetPlayerName());
     }
     private static bool isPublic(ZDO zdo) => zdo.GetBool(PortalStation._prop_station_code);
     private static bool isCreator(long creator) => creator == Player.m_localPlayer.GetPlayerID();
@@ -245,6 +243,7 @@ public static class PortalStationGUI
     {
         if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) return;
         long creator = zdo.GetLong(ZDOVars.s_creator);
+        
         if (!isPublic(zdo) && !isCreator(creator) && !isInGroup(creator) && !isInGuild(Player.GetPlayer(creator))) return;
         string name = zdo.GetString(PortalStation._prop_station_name);
         if (name.IsNullOrWhiteSpace()) return;

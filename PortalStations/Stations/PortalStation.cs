@@ -99,7 +99,7 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
             m_audioSource.volume = m_intensity * _PortalVolume.Value;
         }
 
-        if (m_rune != null)
+        if (m_rune is not null)
         {
             if (m_vanilla)
             {
@@ -132,7 +132,6 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
             TextInput.instance.RequestText(this, _StationRenameText.Value, 40);
             return true;
         }
-        
         return InUseDistance(user) && PortalStationGUI.ShowPortalGUI(_znv);
     }
     public void RPC_SetStationName(long sender, string value)

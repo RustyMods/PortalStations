@@ -146,7 +146,7 @@
         <None Include="App.config" />
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="..\..\..\bundles_2024\portal_station_assets">
+        <EmbeddedResource Include="..\..\..\VALHEIM RIPPED\ashland rip\AshlandRIP\AssetBundles\StandaloneWindows\portal_station_assets">
           <Link>assets\portal_station_assets</Link>
         </EmbeddedResource>
         <Content Include=".gitignore" />

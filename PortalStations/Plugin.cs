@@ -7,9 +7,9 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using ItemManager;
 using JetBrains.Annotations;
 using PieceManager;
-using PortalStations.Managers;
 using PortalStations.Stations;
 using ServerSync;
 using UnityEngine;
@@ -23,7 +23,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.2.1";
+        internal const string ModVersion = "1.2.3";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -219,7 +219,7 @@ namespace PortalStations
             Item PersonalPortalDevice = new("portal_station_assets", "item_personalteleportationdevice");
             PersonalPortalDevice.Name.English("Portable Portal");
             PersonalPortalDevice.Description.English("Travel made easy");
-            PersonalPortalDevice.Crafting.Add(Managers.CraftingTable.Forge, 2);
+            PersonalPortalDevice.Crafting.Add(ItemManager.CraftingTable.Forge, 2);
             PersonalPortalDevice.RequiredItems.Add("SurtlingCore", 3);
             PersonalPortalDevice.RequiredItems.Add("LeatherScraps", 30);
             PersonalPortalDevice.RequiredItems.Add("Iron", 5);
@@ -235,14 +235,9 @@ namespace PortalStations
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PersonalPortalDevice.Prefab.transform, "SurtlingCores").gameObject);
 
         }
-        private void Update()
-        {
-            PortalStationGUI.UpdateGUI();
-        }
-        private void OnDestroy()
-        {
-            Config.Save();
-        }
+        private void Update() => PortalStationGUI.UpdateGUI();
+        private void OnDestroy() => Config.Save();
+        
         private static AssetBundle GetAssetBundle(string fileName)
         {
             Assembly execAssembly = Assembly.GetExecutingAssembly();
