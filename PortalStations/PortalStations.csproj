@@ -127,6 +127,7 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Managers\PieceCloneManager.cs" />
         <Compile Include="Managers\ItemManager.cs" />
         <Compile Include="Managers\MaterialReplacer.cs" />
         <Compile Include="Managers\PieceManager.cs" />
@@ -137,7 +138,6 @@
         <Compile Include="Stations\PersonalTeleportationDevice.cs" />
         <Compile Include="Stations\PortalStation.cs" />
         <Compile Include="Stations\PortalStationGUI.cs" />
-        <Compile Include="Stations\SetData.cs" />
         <Compile Include="Stations\Stations.cs" />
         <Compile Include="Stations\Teleportation.cs" />
         <Compile Include="VersionHandshake.cs" />

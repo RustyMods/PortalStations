@@ -105,10 +105,9 @@ public static class LoadUI
     private static void SetVariables(InventoryGui instance)
     {
         PortalGUI = Object.Instantiate(_asset.LoadAsset<GameObject>("portalstation_gui"), instance.transform, false);
-        PortalGUI_Item = Object.Instantiate(_asset.LoadAsset<GameObject>("portalstation_gui_stationitem"));
+        PortalGUI_Item = _asset.LoadAsset<GameObject>("portalstation_gui_stationitem");
         ItemListRoot = Utils.FindChild(PortalGUI.transform, "$part_Content").GetComponent<RectTransform>();
         
-        Object.DontDestroyOnLoad(PortalGUI);
         PortalGUI.SetActive(false);
         
         m_public_text_go = Utils.FindChild(PortalGUI.transform, "$text_public").gameObject;

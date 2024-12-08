@@ -81,10 +81,10 @@ public static class Patches
             List<Piece> output = new();
             foreach (var piece in __result)
             {
-                if (PieceEffectsSetter.PrefabsToSet.Contains(piece.gameObject)) continue;
+                if (!piece.GetComponent<PortalStation>()) continue;
                 output.Add(piece);
             }
-
+    
             __result = output;
         }
     }

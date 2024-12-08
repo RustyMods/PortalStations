@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using BepInEx;
 using UnityEngine;
 using static PortalStations.PortalStationsPlugin;
@@ -17,10 +18,8 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
     public ParticleSystem[] m_particles = null!;
     public Light m_light = null!;
     public AudioSource m_audioSource = null!;
-    public Material? m_rune;
+    public List<Material> m_emissiveMaterials = new();
     public MeshRenderer? m_model;
-
-    private bool m_vanilla;
     
     public Color m_baseColor;
     public float m_lightBaseIntensity;
@@ -41,21 +40,12 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         }
         GameObject portalEffects = parent.gameObject;
 
-        m_particles = portalEffects.GetComponentsInChildren<ParticleSystem>();
-        m_light = portalEffects.GetComponentInChildren<Light>();
-        m_audioSource = portalEffects.GetComponentInChildren<AudioSource>();
-        
-        Transform? m_runeGlyph = Utils.FindChild(transform, "emissive");
-        if (m_runeGlyph)
+        m_particles = portalEffects.GetComponentsInChildren<ParticleSystem>(true);
+        m_light = portalEffects.GetComponentInChildren<Light>(true);
+        m_audioSource = portalEffects.GetComponentInChildren<AudioSource>(true);
+        if (m_model != null)
         {
-            m_rune = m_runeGlyph.GetComponent<MeshRenderer>().material;
-            m_baseColor = m_rune.color;
-            m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, 0f);
-        }
-        else if (m_model != null)
-        {
-            m_rune = m_model.material;
-            m_vanilla = true;
+            m_emissiveMaterials.Add(m_model.material);
         }
 
         if (m_light)
@@ -99,16 +89,9 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
             m_audioSource.volume = m_intensity * _PortalVolume.Value;
         }
 
-        if (m_rune is not null)
+        foreach (var emission in m_emissiveMaterials)
         {
-            if (m_vanilla)
-            {
-                m_rune.SetColor("_EmissionColor", Color.Lerp(Color.black, m_baseColor, m_intensity));
-            }
-            else
-            {
-                m_rune.color = new Color(m_baseColor.r, m_baseColor.g, m_baseColor.b, m_intensity * 1f);
-            }
+            emission.SetColor("_EmissionColor", Color.Lerp(Color.black, m_baseColor, m_intensity));
         }
     }
 

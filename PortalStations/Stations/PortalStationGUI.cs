@@ -97,9 +97,9 @@ public static class PortalStationGUI
 
         if (_PortalToPlayers.Value is PortalStationsPlugin.Toggle.Off) return;
 
-        foreach (Player player in Player.GetAllPlayers())
+        foreach (ZNetPeer peer in ZNet.instance.GetPeers())
         {
-            CreateDestination(player, user, deviceData, filter, fuel);
+            CreateDestination(peer, user, deviceData, filter, fuel);
         }
     }
     private static ItemDrop? GetFuelItem()
@@ -185,13 +185,13 @@ public static class PortalStationGUI
             TeleportWithCost(zdo, cost, fuel);
         });    
     }
-    private static void CreateDestination(Player player, Humanoid user, ItemDrop.ItemData device, string filter, ItemDrop fuel)
+    private static void CreateDestination(ZNetPeer peer, Humanoid user, ItemDrop.ItemData device, string filter, ItemDrop fuel)
     {
-        if (player.GetZDOID() == user.GetZDOID()) return;
-        string name = player.GetPlayerName();
+        if (peer.m_characterID == user.GetZDOID()) return;
+        string name = peer.m_playerName;
         if (name.IsNullOrWhiteSpace()) return;
         if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
-        int cost = Teleportation.CalculateFuelCost(device, Vector3.Distance(player.transform.position, user.transform.position));
+        int cost = Teleportation.CalculateFuelCost(device, Vector3.Distance(peer.GetRefPos(), user.transform.position));
 
         GameObject item = Object.Instantiate(PortalGUI_Item, ItemListRoot);
         Utils.FindChild(item.transform, "$part_StationName").GetComponent<Text>().text = name;
@@ -209,7 +209,7 @@ public static class PortalStationGUI
         favorite.GetComponent<Button>().interactable = false;
         Utils.FindChild(item.transform, "$part_TeleportButton").GetComponent<Button>().onClick.AddListener(() =>
         {
-            TeleportWithCost(player.transform.position, cost, fuel);
+            TeleportWithCost(peer.GetRefPos(), cost, fuel);
         });
     }
     private static void CreatePlayerDestination(ZNetPeer peer, string filter, ItemDrop fuel)
