@@ -10,19 +10,15 @@ public static class Patches
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
     static class AttachPortalStationGUI
     {
-        private static void Postfix(InventoryGui __instance)
-        {
-            LoadUI.InitGUI(__instance);
-        }
+        private static void Postfix(InventoryGui __instance) => LoadUI.InitGUI(__instance);
+        
     }
     
     [HarmonyPatch(typeof(StoreGui), nameof(StoreGui.IsVisible))]
     static class IsStationVisible2
     {
-        private static void Postfix(ref bool __result)
-        {
-            __result |=  IsPortalGUIVisible();
-        }
+        private static void Postfix(ref bool __result) => __result |=  IsPortalGUIVisible();
+        
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Hide))]
@@ -64,7 +60,7 @@ public static class Patches
     {
         private static void Postfix(Player __instance)
         {
-            if (!__instance) return;
+            if (!__instance || __instance != Player.m_localPlayer) return;
             if (!__instance.m_customData.TryGetValue(PortalStation._FavoriteKey, out string data)) return;
             IDeserializer deserializer = new DeserializerBuilder().Build();
             Favorites = deserializer.Deserialize<List<string>>(data);
@@ -77,15 +73,8 @@ public static class Patches
         private static void Postfix(ref List<Piece> __result)
         {
             if (PortalStationsPlugin._OnlyAdminBuilds.Value is PortalStationsPlugin.Toggle.Off) return;
-            if (Player.m_localPlayer.NoCostCheat()) return;
-            List<Piece> output = new();
-            foreach (var piece in __result)
-            {
-                if (!piece.GetComponent<PortalStation>()) continue;
-                output.Add(piece);
-            }
-    
-            __result = output;
+            if (ZNet.instance.LocalPlayerIsAdminOrHost()) return;
+            __result.RemoveAll(x => x.GetComponent<PortalStation>());
         }
     }
 }

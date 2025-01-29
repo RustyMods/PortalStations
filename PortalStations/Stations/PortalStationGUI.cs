@@ -2,6 +2,7 @@
 using System.Linq;
 using BepInEx;
 using Guilds;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
 using static PortalStations.PortalStationsPlugin;
@@ -34,13 +35,10 @@ public static class PortalStationGUI
         }
         Patches.SaveFavorites();
     }
-    public static void SetToggleValue()
+    public static void TogglePublic()
     {
-        if (currentPortalStation == null) return;
-        if (!currentPortalStation.IsValid()) return;
-        long localId = Player.m_localPlayer.GetPlayerID();
-        long creatorId = currentPortalStation.GetZDO().GetLong(ZDOVars.s_creator);
-        if (localId != creatorId) return;
+        if (currentPortalStation == null || !currentPortalStation.IsValid()) return;
+        if (Player.m_localPlayer.GetPlayerID() != currentPortalStation.GetZDO().GetLong(ZDOVars.s_creator)) return;
         bool flag = !currentPortalStation.GetZDO().GetBool(PortalStation._prop_station_code);
         currentPortalStation.GetZDO().Set(PortalStation._prop_station_code, flag);
         ToggleOn.SetActive(flag);
@@ -48,10 +46,31 @@ public static class PortalStationGUI
         
         m_public_text.text = flag ? _PublicText.Value : _PrivateText.Value;
     }
+
+    public static void ToggleGroup()
+    {
+        if (currentPortalStation == null || !currentPortalStation.IsValid()) return;
+        if (Player.m_localPlayer.GetPlayerID() != currentPortalStation.GetZDO().GetLong(ZDOVars.s_creator)) return;
+        bool flag = !currentPortalStation.GetZDO().GetBool(PortalStation._prop_station_group_code);
+        currentPortalStation.GetZDO().Set(PortalStation._prop_station_group_code, flag);
+        GroupToggleOn.SetActive(flag);
+        GroupToggleOff.SetActive(!flag);
+    }
+    
+    public static void ToggleGuild()
+    {
+        if (currentPortalStation == null || !currentPortalStation.IsValid()) return;
+        if (Player.m_localPlayer.GetPlayerID() != currentPortalStation.GetZDO().GetLong(ZDOVars.s_creator)) return;
+        bool flag = !currentPortalStation.GetZDO().GetBool(PortalStation._prop_station_guild_code);
+        currentPortalStation.GetZDO().Set(PortalStation._prop_station_guild_code, flag);
+        GuildToggleOn.SetActive(flag);
+        GuildToggleOff.SetActive(!flag);
+    }
     private static void SetToggleVisibility(bool toggle)
     {
         m_public_button.SetActive(toggle);
-        m_public_text_go.SetActive(toggle);
+        m_group_button.SetActive(Groups.API.IsLoaded() && toggle);
+        m_guild_button.SetActive(Guilds.API.IsLoaded() && toggle);
     }
     public static bool ShowPortalGUI(ZNetView znv)
     {
@@ -66,6 +85,12 @@ public static class PortalStationGUI
         ToggleOn.SetActive(flag);
         ToggleOff.SetActive(!flag);
         m_public_text.text = flag ? _PublicText.Value : _PrivateText.Value;
+        bool grouped = znv.GetZDO().GetBool(PortalStation._prop_station_group_code);
+        bool guild = znv.GetZDO().GetBool(PortalStation._prop_station_guild_code);
+        GroupToggleOn.SetActive(grouped);
+        GroupToggleOff.SetActive(!grouped);
+        GuildToggleOn.SetActive(guild);
+        GuildToggleOff.SetActive(!guild);
         SetToggleVisibility(true);
         return true;
     }
@@ -189,7 +214,7 @@ public static class PortalStationGUI
     {
         if (peer.m_characterID == user.GetZDOID()) return;
         string name = peer.m_playerName;
-        if (name.IsNullOrWhiteSpace()) return;
+        if (name.IsNullOrWhiteSpace() || name.ToLower().Contains("stranger")) return;
         if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;
         int cost = Teleportation.CalculateFuelCost(device, Vector3.Distance(peer.GetRefPos(), user.transform.position));
 
@@ -230,12 +255,48 @@ public static class PortalStationGUI
             TeleportWithCost(peer.m_refPos, cost, fuel);
         });
     }
-    private static bool isInGroup(long creator) => Groups.API.FindGroupMemberByPlayerId(creator) != null;
-    private static bool isInGuild(Player? creator)
+
+    private static bool isInGroup(long creator, bool enable)
     {
-        Guild? guild = API.GetOwnGuild();
-        if (guild == null || creator == null) return false;
-        return guild.Members.Any(member => member.Key.name == creator.GetPlayerName());
+        if (!enable) return false;
+        return Groups.API.FindGroupMemberByPlayerId(creator) != null;
+    }
+    private static bool isInGuild(string guildName, bool enable)
+    {
+        if (!enable) return false;
+        if (Guilds.API.GetOwnGuild() is not { } guild) return false;
+
+        return guild.Name == guildName;
+    }
+
+    [HarmonyPatch(typeof(Piece), nameof(Piece.SetCreator))]
+    private static class Piece_SetCreator_Patch
+    {
+        private static void Postfix(Piece __instance)
+        {
+            if (__instance.m_nview == null || !__instance.m_nview.IsOwner() || !__instance.m_nview.GetZDO().GetString("CreatorName").IsNullOrWhiteSpace()) return;
+            __instance.m_nview.GetZDO().Set("CreatorName".GetStableHashCode(), Game.instance.GetPlayerProfile().GetName());
+            if (Guilds.API.IsLoaded() && Guilds.API.GetOwnGuild() is { } guild)
+            {
+                __instance.m_nview.GetZDO().Set("Guild".GetStableHashCode(), guild.Name);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Piece), nameof(Piece.Awake))]
+    private static class Piece_Awake_Patch
+    {
+        private static void Postfix(Piece __instance)
+        {
+            if (!__instance.GetComponent<PortalStation>()) return;
+            if (!__instance.m_nview.IsValid() || !__instance.m_nview.IsOwner()) return;
+            if (Player.m_localPlayer && Player.m_localPlayer.GetPlayerID() == __instance.GetCreator() 
+                                     && __instance.m_nview.GetZDO().GetString("Guild".GetStableHashCode()).IsNullOrWhiteSpace() 
+                                     && Guilds.API.IsLoaded() && Guilds.API.GetOwnGuild() is { } guild)
+            {
+                __instance.m_nview.GetZDO().Set("Guild".GetStableHashCode(), guild.Name);
+            }
+        }
     }
     private static bool isPublic(ZDO zdo) => zdo.GetBool(PortalStation._prop_station_code);
     private static bool isCreator(long creator) => creator == Player.m_localPlayer.GetPlayerID();
@@ -243,8 +304,10 @@ public static class PortalStationGUI
     {
         if (!zdo.IsValid() || zdo.m_uid == znv.GetZDO().m_uid) return;
         long creator = zdo.GetLong(ZDOVars.s_creator);
-        
-        if (!isPublic(zdo) && !isCreator(creator) && !isInGroup(creator) && !isInGuild(Player.GetPlayer(creator))) return;
+        string creatorGuild = zdo.GetString("Guild".GetStableHashCode());
+        if (!isPublic(zdo) && !isCreator(creator) 
+                           && !isInGroup(creator, znv.GetZDO().GetBool(PortalStation._prop_station_group_code)) 
+                           && !isInGuild(creatorGuild, znv.GetZDO().GetBool(PortalStation._prop_station_guild_code))) return;
         string name = zdo.GetString(PortalStation._prop_station_name);
         if (name.IsNullOrWhiteSpace()) return;
         if (!filter.IsNullOrWhiteSpace() && !name.ToLower().Contains(filter.ToLower())) return;

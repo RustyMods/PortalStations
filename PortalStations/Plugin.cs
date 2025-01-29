@@ -24,7 +24,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.2.5";
+        internal const string ModVersion = "1.2.8";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -97,6 +97,7 @@ namespace PortalStations
             PortalStationFountain.DestroyedEffects.Add("vfx_RockHit");
             PortalStationFountain.DestroyedEffects.Add("sfx_rock_destroyed");
             PortalStationFountain.ClonePortalSFXFrom = "portal_wood";
+            MaterialReplacer.RegisterGameObjectForMatSwap(PortalStationFountain.Prefab.transform.Find("effects").gameObject);
             var fountainModel = Utils.FindChild(PortalStationFountain.Prefab.transform, "model");
             MaterialReplacer.RegisterGameObjectForShaderSwap(fountainModel.gameObject, MaterialReplacer.ShaderType.PieceShader);
             var fountainPortal = PortalStationFountain.Prefab.AddComponent<PortalStation>();

@@ -9,8 +9,10 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
 {
     public static readonly int _prop_station_name = "stationName".GetStableHashCode();
     public static readonly int _prop_station_code = "stationNetwork".GetStableHashCode();
-    public static readonly string _FavoriteKey = "PortalStationFavorites";
-    
+    public static readonly int _prop_station_guild_code = "GuildNetwork".GetStableHashCode();
+    public static readonly int _prop_station_group_code = "GroupNetwork".GetStableHashCode();
+    public const string _FavoriteKey = "PortalStationFavorites";
+
     private const float use_distance = 5.0f;
     private ZNetView _znv = null!;
 

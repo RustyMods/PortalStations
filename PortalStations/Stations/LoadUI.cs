@@ -18,10 +18,21 @@ public static class LoadUI
     public static GameObject ToggleOff = null!;
     public static GameObject m_public_button = null!;
     public static GameObject m_public_text_go = null!;
+    public static GameObject m_group_button = null!;
+    public static GameObject m_group_text_go = null!;
+    public static GameObject GroupToggleOn = null!;
+    public static GameObject GroupToggleOff = null!;
+    public static GameObject m_guild_button = null!;
+    public static GameObject m_guild_text_go = null!;
+    public static GameObject GuildToggleOn = null!;
+    public static GameObject GuildToggleOff = null!;
+
     public static RectTransform ItemListRoot = null!;
     [Header("Inputs")]
     public static Text m_title = null!;
     public static Text m_public_text = null!;
+    public static Text m_group_text = null!;
+    public static Text m_guild_text = null!;
     
     public static void InitGUI(InventoryGui instance)
     {
@@ -31,7 +42,7 @@ public static class LoadUI
         SetCloseButton();
         AddBackgroundMaterial();
         SetConfigurable();
-        SetToggleButton();
+        SetOtherButtons();
         SetFilterListener();
         AddSFX();
         AddFont();
@@ -52,14 +63,40 @@ public static class LoadUI
         }
     }
 
-    private static void SetToggleButton()
+    private static void SetOtherButtons()
     {
         Transform ToggleButton = Utils.FindChild(PortalGUI.transform, "$part_toggleButton");
-        m_public_button = ToggleButton.gameObject;
+        m_public_button = ToggleButton.parent.gameObject;
         if (!ToggleButton.TryGetComponent(out Button toggleButton)) return;
-        toggleButton.onClick.AddListener(SetToggleValue);
+        toggleButton.onClick.AddListener(TogglePublic);
         ToggleOn = Utils.FindChild(ToggleButton, "On").gameObject;
         ToggleOff = Utils.FindChild(ToggleButton, "Off").gameObject;
+
+        Transform GroupButton = Utils.FindChild(PortalGUI.transform, "$part_groupButton");
+        m_group_button = GroupButton.parent.gameObject;
+        if (!GroupButton.TryGetComponent(out Button groupButton)) return;
+        groupButton.onClick.AddListener(ToggleGroup);
+        GroupToggleOn = Utils.FindChild(GroupButton, "On").gameObject;
+        GroupToggleOff = Utils.FindChild(GroupButton, "Off").gameObject;
+
+        Transform GuildButton = Utils.FindChild(PortalGUI.transform, "$part_guildButton");
+        m_guild_button = GuildButton.parent.gameObject;
+        if (!GuildButton.TryGetComponent(out Button guildButton)) return;
+        guildButton.onClick.AddListener(ToggleGuild);
+        GuildToggleOn = Utils.FindChild(GuildButton, "On").gameObject;
+        GuildToggleOff = Utils.FindChild(GuildButton, "Off").gameObject;
+
+        if (!Groups.API.IsLoaded())
+        {
+            m_group_button.SetActive(false);
+            m_group_text_go.SetActive(false);
+        }
+
+        if (!Guilds.API.IsLoaded())
+        {
+            m_guild_button.SetActive(false);
+            m_guild_text_go.SetActive(false);
+        }
     }
 
     private static void SetFilterListener()
@@ -113,6 +150,12 @@ public static class LoadUI
         m_public_text_go = Utils.FindChild(PortalGUI.transform, "$text_public").gameObject;
         m_public_text = m_public_text_go.GetComponent<Text>();
         m_title = Utils.FindChild(PortalGUI.transform, "$text_title").GetComponent<Text>();
+
+        m_group_text_go = Utils.FindChild(PortalGUI.transform, "$text_group").gameObject;
+        m_group_text = m_group_text_go.GetComponent<Text>();
+
+        m_guild_text_go = Utils.FindChild(PortalGUI.transform, "$text_guild").gameObject;
+        m_guild_text = m_group_text_go.GetComponent<Text>();
     }
 
     private static void GetAssets(InventoryGui instance)
