@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using PortalStations.UI;
 using static PortalStations.PortalStationsPlugin;
 
 namespace PortalStations.Stations;
@@ -19,7 +20,7 @@ public static class PersonalTeleportationDevice
     {
         if (item.m_durability < item.m_shared.m_durabilityDrain) return;
         item.m_durability -= _PersonalPortalDurabilityDrain.Value;
-        PortalStationGUI.ShowPortalGUI(user, item);
+        StationUI.m_instance.Show();
     }
     
 }

@@ -64,8 +64,8 @@ public static class PieceCloneManager
             if (!clone.TryGetComponent(out TeleportWorld world)) return;
             PortalStation portal = clone.AddComponent<PortalStation>();
             
-            portal.m_model = clone.GetComponentInChildren<MeshRenderer>();
-            portal.m_baseColor = world.m_colorTargetfound;
+            // portal.m_model = clone.GetComponentInChildren<MeshRenderer>();
+            portal.m_emissionColor = world.m_colorTargetfound;
             
             UnityEngine.Object.Destroy(world);
             if (clone.GetComponentInChildren<TeleportWorldTrigger>() is {} teleport) UnityEngine.Object.Destroy(teleport.gameObject);
