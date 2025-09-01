@@ -18,9 +18,9 @@ public static class PersonalTeleportationDevice
     }
     private static void UseItem(Humanoid user, ItemDrop.ItemData item)
     {
+        if (user is not Player player) return;
         if (item.m_durability < item.m_shared.m_durabilityDrain) return;
-        item.m_durability -= _PersonalPortalDurabilityDrain.Value;
-        StationUI.m_instance.Show();
+        PortalStationUI.instance?.Show(player, item);
     }
     
 }

@@ -45,14 +45,17 @@ public static class FontManager
     {
         var font = GetFont(PortalStationsPlugin._Font.Value);
         foreach (var text in m_allTexts) text.Update(font);
-        StationElement.OnFontChange(font);
+        if (PortalStationUI.instance != null)
+        {
+            PortalStationUI.instance.OnFontChange(font);
+        }
     }
 
     public static void SetFont(Text[] array)
     {
         foreach (Text text in array)
-        {
-            var _ = new TalentText(text, GetFont(PortalStationsPlugin._Font.Value));
+        { 
+            _ = new TalentText(text, GetFont(PortalStationsPlugin._Font.Value));
         }
     }
 

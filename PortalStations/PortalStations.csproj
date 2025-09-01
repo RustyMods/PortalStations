@@ -88,6 +88,9 @@
         <Reference Include="SoftReferenceableAssets">
           <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\SoftReferenceableAssets_publicized.dll</HintPath>
         </Reference>
+        <Reference Include="Splatform">
+          <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\Splatform_publicized.dll</HintPath>
+        </Reference>
         <Reference Include="System" />
         <Reference Include="System.Core" />
         <Reference Include="System.Data" />
@@ -127,34 +130,32 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Managers\AssetBundleManager.cs" />
+        <Compile Include="Managers\Clone.cs" />
+        <Compile Include="Managers\Helpers.cs" />
         <Compile Include="Managers\LocalizationManager.cs" />
-        <Compile Include="Managers\PieceCloneManager.cs" />
         <Compile Include="Managers\ItemManager.cs" />
         <Compile Include="Managers\MaterialReplacer.cs" />
         <Compile Include="Managers\PieceManager.cs" />
+        <Compile Include="Managers\PrefabManager.cs" />
         <Compile Include="Plugin.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Stations\PersonalTeleportationDevice.cs" />
         <Compile Include="Stations\PortalStation.cs" />
-        <Compile Include="Stations\Stations.cs" />
-        <Compile Include="Stations\Teleportation.cs" />
-        <Compile Include="UI\DropdownItem.cs" />
+        <Compile Include="Stations\StationManager.cs" />
         <Compile Include="UI\FontManager.cs" />
-        <Compile Include="UI\StationButton.cs" />
-        <Compile Include="UI\StationElement.cs" />
-        <Compile Include="UI\StationUI.cs" />
-        <Compile Include="UI\UIHover.cs" />
+        <Compile Include="UI\PortalStationUI.cs" />
         <Compile Include="VersionHandshake.cs" />
     </ItemGroup>
     <ItemGroup>
         <None Include="App.config" />
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="..\..\..\bundles_2024\portalstationui">
-          <Link>assets\portalstationui</Link>
-        </EmbeddedResource>
         <EmbeddedResource Include="..\..\..\bundles_2024\portal_station_assets">
           <Link>assets\portal_station_assets</Link>
+        </EmbeddedResource>
+        <EmbeddedResource Include="..\..\..\VALHEIM RIPPED\BOG WITCH\AssetBundles\StandaloneWindows\stationui">
+          <Link>assets\stationui</Link>
         </EmbeddedResource>
         <Content Include=".gitignore" />
         <Content Include="environment.props" />

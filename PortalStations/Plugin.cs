@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,6 +17,7 @@ using PortalStations.UI;
 using ServerSync;
 using UnityEngine;
 using CraftingTable = PieceManager.CraftingTable;
+using PrefabManager = ItemManager.PrefabManager;
 
 namespace PortalStations
 {
@@ -25,7 +27,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.2.9";
+        internal const string ModVersion = "1.3.2";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private const string ConfigFileName = ModGUID + ".cfg";
@@ -37,27 +39,26 @@ namespace PortalStations
 
         public static PortalStationsPlugin _plugin = null!;
         public static AssetBundle PrefabAssets = null!;
-        public static AssetBundle UIAssets = null!;
         public static GameObject _root = null!;
+        public static bool ValidServer;
         public enum Toggle { On = 1, Off = 0 }
         
         private static ConfigEntry<Toggle> _serverConfigLocked = null!;
         public static ConfigEntry<Toggle> _TeleportAnything = null!;
         public static ConfigEntry<string> _DeviceFuel = null!;
         public static ConfigEntry<Toggle> _DeviceUseFuel = null!;
-        public static ConfigEntry<int> _DevicePerFuelAmount = null!;
-        public static ConfigEntry<int> _DeviceAdditionalDistancePerUpgrade = null!;
+        public static ConfigEntry<float> _DevicePerFuelAmount = null!;
+        public static ConfigEntry<float> _DeviceAdditionalDistancePerUpgrade = null!;
         public static ConfigEntry<Toggle> _PortalToPlayers = null!;
         public static ConfigEntry<Toggle> _PortalUseFuel = null!;
-        public static ConfigEntry<int> _PortalPerFuelAmount = null!;
+        public static ConfigEntry<float> _PortalPerFuelAmount = null!;
         public static ConfigEntry<Toggle> _UsePortalKeys = null!;
-        public static ConfigEntry<Toggle> _OnlyAdminRename = null!;
+        public static ConfigEntry<string> _PortalKeys = null!;
         public static ConfigEntry<float> _PortalVolume = null!;
         public static ConfigEntry<float> _PersonalPortalDurabilityDrain = null!;
-        public static ConfigEntry<Toggle> _OnlyAdminBuilds = null!;
         public static ConfigEntry<FontManager.FontOptions> _Font = null!;
-        public static ConfigEntry<Toggle> _DisplayBiome = null!;
-        public static ConfigEntry<Toggle> _DisplayDistance = null!;
+        public static ConfigEntry<PortalStationUI.BackgroundOption> BkgOption = null!;
+        public static ConfigEntry<Vector3> PanelPos = null!;
 
         private void InitConfigs()
         {
@@ -65,29 +66,105 @@ namespace PortalStations
             _Font.SettingChanged += FontManager.OnFontChange;
             _DeviceUseFuel = config("Settings", "2 - Portable Portal Use Fuel", Toggle.On, "If on, personal teleportation device uses fuel");
             _DeviceFuel = config("Settings", "3 - Portable Portal Fuel", "Coins", "Set the prefab name of the fuel item required to teleport");
-            _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<int>(1, 50)));
-            _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<int>(1, 50)));
+            _DevicePerFuelAmount = config("Settings", "4 - Portable Portal Fuel Distance", 1f, new ConfigDescription("Fuel cost to travel, higher value increases range per fuel", new AcceptableValueRange<float>(0f, 50f)));
+            _DeviceAdditionalDistancePerUpgrade = config("Settings", "5 - Portable Portal Upgrade Boost", 1f, new ConfigDescription("Cost reduction multiplier per item upgrade level", new AcceptableValueRange<float>(1f, 50f)));
             _PortalToPlayers = config("Settings", "6 - Portal To Players", Toggle.Off, "If on, portal shows players as destination options");
-            _OnlyAdminRename = config("Settings", "7 - Only Admin Renames", Toggle.Off, "If on, only admins with no cost cheat on can rename portals");
             _PortalUseFuel = config("Settings", "8 - Portal Use Fuel", Toggle.Off, "If on, static portals require fuel");
-            _PortalPerFuelAmount = config("Settings", "9 - Portal Fuel Distance", 10, new ConfigDescription("Fuel cost per distance", new AcceptableValueRange<int>(1, 101)));
+            _PortalPerFuelAmount = config("Settings", "9 - Portal Fuel Distance", 0.5f, new ConfigDescription("Fuel cost per distance", new AcceptableValueRange<float>(0f, 101f)));
             _PortalVolume = config("Settings", "8 - Portal Volume", 0.8f, new ConfigDescription("Set the volume of the portal effects", new AcceptableValueRange<float>(0f, 1f)), false);
             _PersonalPortalDurabilityDrain = config("Settings", "9 - Portable Portal Durability Drain", 10.0f, new ConfigDescription("Set the durability drain per portable portal usage", new AcceptableValueRange<float>(0f, 100f)));
             _TeleportAnything = config("Settings", "1 - Teleport Anything", Toggle.Off, "If on, portal station allows to teleport without restrictions");
             _UsePortalKeys = config("Teleport Keys", "0 - Use Keys", Toggle.Off, "If on, portal checks keys to portal player if carrying ores, dragon eggs, etc...");
-            _OnlyAdminBuilds = config("Settings", "Only Admin Can Build", Toggle.Off, "Set visibility of portals in build menu");
-            _DisplayBiome = config("User Interface", "Show Biome", Toggle.Off, "If on, biome will be added to portal name");
-            _DisplayDistance = config("User Interface", "Show Distance", Toggle.Off, "If on, distance will be added to portal name");
+            _PortalKeys = config("Teleport Keys", "1 - Keys", new SerializedKeys("Copper:defeated_bonemass,Tin:defeated_bonemass,Bronze:defeated_bonemass,IronScrap:defeated_dragon").ToString(), new ConfigDescription("Set keys", null, new ConfigurationManagerAttributes()
+            {
+                CustomDrawer = SerializedKeys.Draw
+            }));
+            BkgOption = config("Settings", "Background", PortalStationUI.BackgroundOption.Opaque, "Set background of UI panel", false);
+            BkgOption.SettingChanged += PortalStationUI.OnBackgroundOptionChange;
+            PanelPos = config("Settings", "Panel Position", new Vector3(1760f, 850f, 0f), "Set position of panel", false);
+            PanelPos.SettingChanged += PortalStationUI.OnPanelPositionConfigChange;
+        }
+
+        public class SerializedKeys
+        {
+            public Dictionary<string, string> Keys = new();
+            public SerializedKeys(Dictionary<string, string> keys) => Keys = keys;
+            public SerializedKeys(string config)
+            {
+                foreach (var kvp in config.Split(','))
+                {
+                    string[] parts = kvp.Split(':');
+                    if (parts.Length != 2) continue;
+                    Keys[parts[0].Trim()] = parts[1].Trim();
+                }
+            }
+
+            public override string ToString() => string.Join(",", Keys.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+            
+            public static void Draw(ConfigEntryBase cfg)
+            {
+                bool locked = cfg.Description.Tags
+                    .Select(a =>
+                        a.GetType().Name == "ConfigurationManagerAttributes"
+                            ? (bool?)a.GetType().GetField("ReadOnly")?.GetValue(a)
+                            : null).FirstOrDefault(v => v != null) ?? false;
+                bool wasUpdated = false;
+                Dictionary<string, string> config = new SerializedKeys((string)cfg.BoxedValue).Keys;
+                if (config.Count == 0)
+                {
+                    config[""] = "";
+                }
+                Dictionary<string, string> keys = new();
+                GUILayout.BeginVertical();
+                foreach (KeyValuePair<string, string> kvp in config)
+                {
+                    GUILayout.BeginHorizontal();
+                    var key = kvp.Key;
+                    var value = kvp.Value;
+                    var keyField = GUILayout.TextField(kvp.Key);
+                    if (keyField != kvp.Key && !locked)
+                    {
+                        wasUpdated = true;
+                        key = keyField;
+                    }
+                    var valueField = GUILayout.TextField(kvp.Value);
+                    if (valueField != kvp.Value && !locked)
+                    {
+                        wasUpdated = true;
+                        value = valueField;
+                    }
+                    
+                    if (GUILayout.Button("x", new GUIStyle(GUI.skin.button) { fixedWidth = 21 }) && !locked)
+                    {
+                        wasUpdated = true;
+                    }
+                    else
+                    {
+                        keys[key] = value;
+                    }
+
+                    if (GUILayout.Button("+", new GUIStyle(GUI.skin.button) { fixedWidth = 21 }) && !locked)
+                    {
+                        keys[""] = "";
+                        wasUpdated = true;
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                GUILayout.EndVertical();
+                if (wasUpdated)
+                {
+                    cfg.BoxedValue = new SerializedKeys(keys).ToString();
+                }
+            }
         }
         public void Awake()
         {
             _plugin = this;
-            PrefabAssets = GetAssetBundle("portal_station_assets");
-            UIAssets = GetAssetBundle("portalstationui");
+            PrefabAssets = AssetBundleManager.GetAssetBundle("portal_station_assets");
+            gameObject.AddComponent<StationManager>();
             _root = new GameObject("root");
             DontDestroyOnLoad(_root);
             _root.SetActive(false);
-
             _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
                 "If on, the configuration is locked and can be changed by server admins only.");
             _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
@@ -123,7 +200,7 @@ namespace PortalStations
             MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab.transform.Find("model").gameObject, MaterialReplacer.ShaderType.PieceShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStation.Prefab.transform, "vanilla_effects").gameObject);
             PortalStation.Prefab.AddComponent<PortalStation>();
-            Stations.Stations.PrefabsToSearch.Add(PortalStation.Prefab.name);
+            StationManager.PrefabsToSearch.Add(PortalStation.Prefab.name);
 
             BuildPiece PortalStationOne = new(PrefabAssets, "portalStationOne");
             PortalStationOne.Name.English("Chained Portal");
@@ -141,10 +218,10 @@ namespace PortalStations
             PortalStationOne.DestroyedEffects.Add("sfx_rock_destroyed");
             PortalStationOne.ClonePortalSFXFrom = "portal_wood";
             PortalStationOne.Crafting.Set(CraftingTable.Workbench);
-            MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStationOne.Prefab.transform.Find("VisualRoot").gameObject, MaterialReplacer.ShaderType.PieceShader);
+            // MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStationOne.Prefab.transform.Find("VisualRoot").gameObject, MaterialReplacer.ShaderType.PieceShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStationOne.Prefab.transform, "vanilla_effects").gameObject);
             PortalStationOne.Prefab.AddComponent<PortalStation>();
-            Stations.Stations.PrefabsToSearch.Add(PortalStationOne.Prefab.name);
+            StationManager.PrefabsToSearch.Add(PortalStationOne.Prefab.name);
             
             BuildPiece portalPlatform = new(PrefabAssets, "portalPlatform");
             portalPlatform.Name.English("Platform Portal");
@@ -164,7 +241,6 @@ namespace PortalStations
             portalPlatform.Crafting.Set(CraftingTable.Workbench);
 
             MaterialReplacer.MaterialData StartPlatformMat = new MaterialReplacer.MaterialData(PrefabAssets, "_REPLACE_startplatform", MaterialReplacer.ShaderType.RockShader);
-            StartPlatformMat.m_texProperties["_EmissiveTex"] = PrefabAssets.LoadAsset<Texture>("startstone_emissive");
             StartPlatformMat.m_floatProperties["_Glossiness"] = 0.216f;
             StartPlatformMat.m_texProperties["_MossTex"] = PrefabAssets.LoadAsset<Texture>("tex_stone_moss1");
             StartPlatformMat.m_floatProperties["_MossAlpha"] = 0f;
@@ -179,7 +255,7 @@ namespace PortalStations
             
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalPlatform.Prefab.transform, "vanilla_effects").gameObject);
             portalPlatform.Prefab.AddComponent<PortalStation>();
-            Stations.Stations.PrefabsToSearch.Add(portalPlatform.Prefab.name);
+            StationManager.PrefabsToSearch.Add(portalPlatform.Prefab.name);
             
             BuildPiece portalStationDoor = new(PrefabAssets, "portalStationDoor");
             portalStationDoor.Name.English("Gate Portal");
@@ -200,44 +276,92 @@ namespace PortalStations
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalStationDoor.Prefab.transform, "model").gameObject);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(portalStationDoor.Prefab.transform, "vanilla_effects").gameObject);
             portalStationDoor.Prefab.AddComponent<PortalStation>();
-            Stations.Stations.PrefabsToSearch.Add(portalStationDoor.Prefab.name);
+            StationManager.PrefabsToSearch.Add(portalStationDoor.Prefab.name);
 
-            PieceCloneManager.BuildClone PortalStationStone = new PieceCloneManager.BuildClone("portal_stone", "PortalStation_Stone");
-            PortalStationStone.RequiredItems.Add("Stone", 20, true);
-            PortalStationStone.RequiredItems.Add("SurtlingCore", 2, true);
-            PortalStationStone.RequiredItems.Add("FineWood", 20, true);
-            PortalStationStone.RequiredItems.Add("GreydwarfEye", 10, true);
-            PortalStationStone.EnglishName = "Stone Portal Station";
-            PortalStationStone.Category = BuildPieceCategory.Misc;
-            PortalStationStone.CustomCategory = "Portal Stations";
-            PortalStationStone.CraftTable = CraftingTable.Workbench;
-            PortalStationStone.IsPortalStation = true;
+            Clone PortalStation_Stone = new Clone("portal_stone", "PortalStation_Stone");
+            PortalStation_Stone.OnCreated += prefab =>
+            {
+                var piece = prefab.GetComponent<Piece>();
+                piece.m_name = $"$piece_{prefab.name.ToLower()}";
+                piece.m_description = $"$piece_{prefab.name.ToLower()}_desc";
+
+                if (!prefab.TryGetComponent(out TeleportWorld component)) return;
+                PortalStation station = prefab.AddComponent<PortalStation>();
+                station.m_emissionColor = component.m_colorTargetfound;
+                DestroyImmediate(component);
+                if (prefab.GetComponentInChildren<TeleportWorldTrigger>() is {} trigger) DestroyImmediate(trigger);
+                if (prefab.GetComponentInChildren<EffectFade>() is { } fade) DestroyImmediate(fade);
+                StationManager.PrefabsToSearch.Add(prefab.name);
+                
+                BuildPiece build = new BuildPiece(prefab);
+                build.RequiredItems.Add("Stone", 20, true);
+                build.RequiredItems.Add("SurtlingCore", 2, true);
+                build.RequiredItems.Add("FineWood", 20, true);
+                build.RequiredItems.Add("GreydwarfEye", 10, true);
+                build.Name.English("Stone Portal Station");
+                build.Category.Set("Portal Stations");
+                build.Crafting.Set(CraftingTable.Workbench);
+
+                PrefabManager.RegisterPrefab(prefab);
+            };
             
-            PieceCloneManager.BuildClone PortalStationWood = new PieceCloneManager.BuildClone("portal_wood", "PortalStation_Wood");
-            PortalStationWood.RequiredItems.Add("Stone", 20, true);
-            PortalStationWood.RequiredItems.Add("SurtlingCore", 2, true);
-            PortalStationWood.RequiredItems.Add("FineWood", 20, true);
-            PortalStationWood.RequiredItems.Add("GreydwarfEye", 10, true);
-            PortalStationWood.EnglishName = "Wood Portal Station";
-            PortalStationWood.Category = BuildPieceCategory.Misc;
-            PortalStationWood.CustomCategory = "Portal Stations";
-            PortalStationWood.CraftTable = CraftingTable.Workbench;
-            PortalStationWood.IsPortalStation = true;
+            Clone PortalStationWood = new Clone("portal_wood", "PortalStation_Wood");
+            PortalStationWood.OnCreated += prefab =>
+            {
+                var piece = prefab.GetComponent<Piece>();
+                piece.m_name = $"$piece_{prefab.name.ToLower()}";
+                piece.m_description = $"$piece_{prefab.name.ToLower()}_desc";
 
-            PieceCloneManager.BuildClone BluePortalStation = new PieceCloneManager.BuildClone("portal", "PortalStation_Blue");
-            BluePortalStation.RequiredItems.Add("Stone", 20, true);
-            BluePortalStation.RequiredItems.Add("SurtlingCore", 2, true);
-            BluePortalStation.RequiredItems.Add("FineWood", 20, true);
-            BluePortalStation.RequiredItems.Add("GreydwarfEye", 10, true);
-            BluePortalStation.EnglishName = "Legacy Portal Station";
-            BluePortalStation.Category = BuildPieceCategory.Misc;
-            BluePortalStation.CustomCategory = "Portal Stations";
-            BluePortalStation.CraftTable = CraftingTable.Workbench;
-            BluePortalStation.IsPortalStation = true;
+                if (!prefab.TryGetComponent(out TeleportWorld component)) return;
+                PortalStation station = prefab.AddComponent<PortalStation>();
+                station.m_emissionColor = component.m_colorTargetfound;
+                DestroyImmediate(component);
+                if (prefab.GetComponentInChildren<TeleportWorldTrigger>() is {} trigger) DestroyImmediate(trigger);
+                if (prefab.GetComponentInChildren<EffectFade>() is { } fade) DestroyImmediate(fade);
+                StationManager.PrefabsToSearch.Add(prefab.name);
+                
+                BuildPiece build = new BuildPiece(prefab);
+                build.RequiredItems.Add("Stone", 20, true);
+                build.RequiredItems.Add("SurtlingCore", 2, true);
+                build.RequiredItems.Add("FineWood", 20, true);
+                build.RequiredItems.Add("GreydwarfEye", 10, true);
+                build.Name.English("Wood Portal Station");
+                build.Category.Set("Portal Stations");
+                build.Crafting.Set(CraftingTable.Workbench);
+
+                PrefabManager.RegisterPrefab(prefab);
+            };
+            
+            Clone BluePortalStation = new Clone("portal", "PortalStation_Blue");
+            BluePortalStation.OnCreated += prefab =>
+            {
+                var piece = prefab.GetComponent<Piece>();
+                piece.m_name = $"$piece_{prefab.name.ToLower()}";
+                piece.m_description = $"$piece_{prefab.name.ToLower()}_desc";
+
+                if (!prefab.TryGetComponent(out TeleportWorld component)) return;
+                PortalStation station = prefab.AddComponent<PortalStation>();
+                station.m_emissionColor = component.m_colorTargetfound;
+                DestroyImmediate(component);
+                if (prefab.GetComponentInChildren<TeleportWorldTrigger>() is {} trigger) DestroyImmediate(trigger);
+                if (prefab.GetComponentInChildren<EffectFade>() is { } fade) DestroyImmediate(fade);
+                StationManager.PrefabsToSearch.Add(prefab.name);
+                
+                BuildPiece build = new BuildPiece(prefab);
+                build.RequiredItems.Add("Stone", 20, true);
+                build.RequiredItems.Add("SurtlingCore", 2, true);
+                build.RequiredItems.Add("FineWood", 20, true);
+                build.RequiredItems.Add("GreydwarfEye", 10, true);
+                build.Name.English("Legacy Portal Station");
+                build.Category.Set("Portal Stations");
+                build.Crafting.Set(CraftingTable.Workbench);
+
+                PrefabManager.RegisterPrefab(prefab);
+            };
         }
         private static void InitItems()
         {
-            Item PersonalPortalDevice = new("portal_station_assets", "item_personalteleportationdevice");
+            Item PersonalPortalDevice = new(PrefabAssets, "item_personalteleportationdevice");
             PersonalPortalDevice.Name.English("Portable Portal");
             PersonalPortalDevice.Description.English("Travel made easy");
             PersonalPortalDevice.Crafting.Add(ItemManager.CraftingTable.Forge, 2);
@@ -256,24 +380,7 @@ namespace PortalStations
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PersonalPortalDevice.Prefab.transform, "SurtlingCores").gameObject);
 
         }
-
-        private void Update()
-        {
-            if (!Player.m_localPlayer || !StationUI.m_instance) return;
-            if (Input.GetKeyDown(KeyCode.Escape) && StationUI.IsVisible())
-            {
-                StationUI.m_instance.OnClose();
-            }
-        }
         private void OnDestroy() => Config.Save();
-        
-        private static AssetBundle GetAssetBundle(string fileName)
-        {
-            Assembly execAssembly = Assembly.GetExecutingAssembly();
-            string resourceName = execAssembly.GetManifestResourceNames().Single(str => str.EndsWith(fileName));
-            using Stream? stream = execAssembly.GetManifestResourceStream(resourceName);
-            return AssetBundle.LoadFromStream(stream);
-        }
         private void SetupWatcher()
         {
             FileSystemWatcher watcher = new(Paths.ConfigPath, ConfigFileName);

@@ -104,6 +104,7 @@ namespace PortalStations
                 {
                     // Enable mod on client if versions match
                     PortalStationsPlugin.PortalStationsLogger.LogInfo("Received same version from server!");
+                    PortalStationsPlugin.ValidServer = true;
                 }
                 else
                 {
