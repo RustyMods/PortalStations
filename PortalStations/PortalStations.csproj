@@ -151,13 +151,12 @@
         <None Include="App.config" />
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="..\..\..\bundles_2024\portal_station_assets">
-          <Link>assets\portal_station_assets</Link>
-        </EmbeddedResource>
-        <EmbeddedResource Include="..\..\..\VALHEIM RIPPED\BOG WITCH\AssetBundles\StandaloneWindows\stationui">
-          <Link>assets\stationui</Link>
-        </EmbeddedResource>
         <Content Include=".gitignore" />
+        <EmbeddedResource Include="assets\portal_station_assets" />
+        <Content Include="assets\portal_station_assets.manifest" />
+        <EmbeddedResource Include="assets\stationui" />
+        <Content Include="assets\stationui.manifest" />
+        <Content Include="assets\stationui.unitypackage" />
         <Content Include="environment.props" />
         <Content Include="ILRepack.targets" />
         <Content Include="Libs\GroupsAPI.dll">
@@ -168,6 +167,12 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <EmbeddedResource Include="translations\English.yml" />
+        <Content Include="Thunderstore\CHANGELOG.md" />
+        <Content Include="Thunderstore\icon.png" />
+        <Content Include="Thunderstore\manifest.json" />
+        <Content Include="Thunderstore\PortalStations.dll" />
+        <Content Include="Thunderstore\README.md" />
+        <Content Include="Thunderstore\RustyMods-PortalStations-1.3.21.zip" />
         <Content Include="UpdateManifest.ps1" />
     </ItemGroup>
     <ItemGroup>

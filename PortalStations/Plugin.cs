@@ -27,7 +27,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.3.2";
+        internal const string ModVersion = "1.3.21";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private const string ConfigFileName = ModGUID + ".cfg";
@@ -299,6 +299,8 @@ namespace PortalStations
                 build.RequiredItems.Add("FineWood", 20, true);
                 build.RequiredItems.Add("GreydwarfEye", 10, true);
                 build.Name.English("Stone Portal Station");
+                build.Description.English(
+                    "The powerful energy source lets you pass through even the most valuable of items.");
                 build.Category.Set("Portal Stations");
                 build.Crafting.Set(CraftingTable.Workbench);
 
@@ -326,6 +328,7 @@ namespace PortalStations
                 build.RequiredItems.Add("FineWood", 20, true);
                 build.RequiredItems.Add("GreydwarfEye", 10, true);
                 build.Name.English("Wood Portal Station");
+                build.Description.English("Connects to another portal with equal of no tag.");
                 build.Category.Set("Portal Stations");
                 build.Crafting.Set(CraftingTable.Workbench);
 
@@ -354,6 +357,7 @@ namespace PortalStations
                 build.RequiredItems.Add("GreydwarfEye", 10, true);
                 build.Name.English("Legacy Portal Station");
                 build.Category.Set("Portal Stations");
+                build.Description.English("Old portal - The days prior to the world.");
                 build.Crafting.Set(CraftingTable.Workbench);
 
                 PrefabManager.RegisterPrefab(prefab);

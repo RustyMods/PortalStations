@@ -248,7 +248,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         Description.Guild.SetText("$text_guild");
         Description.Public.SetText("$text_public");
         Description.Private.SetText("$text_private");
-        MapButtonText.text = Localization.instance.Localize("$text_map");
+        MapButtonText.text = Localization.instance.Localize("$text_open_map");
         SetBackground(PortalStationsPlugin.BkgOption.Value);
         Hide();
     }
@@ -299,6 +299,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         Description.ShowMapButton(null);
         LoadStations();
         OnUpdate = null;
+        MainButton.gameObject.SetActive(false);
         Requirements.SetActive(false);
         m_destination = null;
         PlayerTab.Enable(PortalStationsPlugin._PortalToPlayers.Value is PortalStationsPlugin.Toggle.On);
@@ -308,6 +309,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     public void OnStationTab()
     {
         StationTab.SetSelected(true);
+        MainButton.gameObject.SetActive(false);
         DestroyTempItems();
         LoadStations();
         Description.ResetDescription();
@@ -320,6 +322,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     public void OnFavoriteTab()
     {
         FavoriteTab.SetSelected(true);
+        MainButton.gameObject.SetActive(false);
         DestroyTempItems();
         LoadStations(true);
         Description.ResetDescription();
@@ -332,6 +335,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     public void OnPlayerTab()
     {
         PlayerTab.SetSelected(true);
+        MainButton.gameObject.SetActive(true);
         DestroyTempItems();
         LoadPlayers();
         Description.ResetDescription();
@@ -345,6 +349,8 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     {
         if (m_currentStation == null || m_currentStationInfo == null) return;
         DestroyTempItems();
+        ResizeLeftList();
+        MainButton.gameObject.SetActive(false);
         SettingTab.SetSelected(true);
         Description.ResetDescription();
         Description.SetName(m_currentStationInfo.Name);
@@ -415,6 +421,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
                 Requirements.LoadTeleportCost(info);
                 m_destination = info;
                 Requirements.favorite.SetFavorite(info.IsFavorite);
+                MainButton.gameObject.SetActive(true);
                 MainButton.interactable = info.CanTeleport(false);
             });
         }
@@ -439,6 +446,8 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
                 Description.SetBodyText(info.GetTooltip());
                 Description.ShowMapButton(info);
                 Requirements.LoadTeleportCost(info);
+                Requirements.favorite.SetFavorite(info.IsFavorite);
+                MainButton.gameObject.SetActive(true);
                 m_destination = info;
             });
         }
