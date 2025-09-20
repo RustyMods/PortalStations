@@ -120,3 +120,13 @@
 
 ### 1.3.21
 - Added missing localized text
+
+### 1.3.21
+- Fixed registering cloned portals twice
+
+### 1.3.22
+- forgot what i changed
+
+### 1.3.23
+- Added search field
+- Ordering portals by name alphabetically

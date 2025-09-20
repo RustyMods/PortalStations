@@ -172,7 +172,6 @@
         <Content Include="Thunderstore\manifest.json" />
         <Content Include="Thunderstore\PortalStations.dll" />
         <Content Include="Thunderstore\README.md" />
-        <Content Include="Thunderstore\RustyMods-PortalStations-1.3.21.zip" />
         <Content Include="UpdateManifest.ps1" />
     </ItemGroup>
     <ItemGroup>

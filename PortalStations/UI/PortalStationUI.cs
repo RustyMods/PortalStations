@@ -6,7 +6,6 @@ using BepInEx.Configuration;
 using Groups;
 using HarmonyLib;
 using JetBrains.Annotations;
-using MWL_Ports.Managers;
 using PortalStations.Managers;
 using PortalStations.Stations;
 using UnityEngine;
@@ -93,6 +92,8 @@ public static class Load_PortalStation_UI
         
         go.CopySpriteAndMaterial(craftingPanel, "Panel/Description/ListRoot/Viewport/Root/NameField/Background", "Decription/craft_button_panel/CraftButton");
         go.CopySpriteAndMaterial(craftingPanel, "Panel/Description/ListRoot/Viewport/Root/GuildField/Background", "Decription/craft_button_panel/CraftButton");
+        
+        go.CopySpriteAndMaterial(craftingPanel, "Panel/LeftPanel/SearchField/Glow", "RepairButton/Glow");
         
         PortalStationUI.ListItem.CopySpriteAndMaterial(craftingPanel, "Icon", "RecipeList/Recipes/RecipeElement/icon");
         GameObject? sfx = craftingPanel.GetComponentInChildren<ButtonSfx>().m_sfxPrefab;
@@ -190,6 +191,8 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     private TempListItem? m_currentStationItem;
     public ItemDrop.ItemData? m_currentItem;
     private StationInfo? m_destination;
+    private ScrollRect[]? scrollRects;
+    private SearchField? search;
     private float m_listItemHeight;
     private float m_leftListMinHeight;
     private float m_pinTimer;
@@ -224,6 +227,12 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         Requirements.Add(transform.Find("Panel/Description/Requirements/3"));
         Requirements.Add(transform.Find("Panel/Description/Requirements/4"));
         MapButtonText = transform.Find("Panel/Description/MapButton/Text").GetComponent<Text>();
+        search = new SearchField(transform.Find("Panel/LeftPanel/SearchField"));
+        search.OnValueChanged(OnSearch);
+        scrollRects = GetComponentsInChildren<ScrollRect>(true);
+        if (scrollRects != null)
+            foreach (var rect in scrollRects)
+                rect.scrollSensitivity = 700f;
         m_defaultIcon = Icon.sprite;
         m_starIcon = Requirements.favorite.Icon.sprite;
     }
@@ -258,6 +267,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         float dt = Time.deltaTime;
         OnUpdate?.Invoke(dt);
         UpdatePin(dt);
+        // search?.Update(); // so small, not worth making it glow
         if (!ZInput.GetKeyDown(KeyCode.Escape) && !ZInput.GetKeyDown(KeyCode.Tab)) return;
         Hide();
     }
@@ -265,6 +275,14 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     public void OnDestroy()
     {
         instance = null;
+    }
+
+    public void OnSearch(string input)
+    {
+        foreach (TempListItem? item in StationItems)
+        {
+            item.SetActive(item.Contains(input));
+        }
     }
 
     public void Show(PortalStation station, Player player)
@@ -403,10 +421,8 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     public void LoadStations(bool favoriteOnly = false)
     {
         DestroyTempItems();
-        foreach (ZDO? zdo in StationManager.GetStations())
+        foreach (StationInfo? info in StationManager.GetStations().Where(zdo => zdo != m_currentStation?.m_nview.GetZDO()).Select(zdo => new StationInfo(zdo)).OrderBy(info => info.Name))
         {
-            if (zdo == m_currentStation?.m_nview.GetZDO()) continue;
-            var info = new StationInfo(zdo);
             if (!info.IsValid) continue;
             if (favoriteOnly && !info.IsFavorite) continue;
             var item = new TempListItem();
@@ -601,6 +617,30 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         PortalStationsPlugin.PanelPos.Value = m_rect.position;
     }
 
+    private class SearchField
+    {
+        private readonly InputField field;
+        private readonly Text placeholder;
+        private readonly Image glow;
+        public SearchField(Transform transform)
+        {
+            field = transform.GetComponent<InputField>();
+            placeholder = transform.Find("Placeholder").GetComponent<Text>();
+            glow = transform.Find("Glow").GetComponent<Image>();
+            placeholder.color = new Color(1f, 1f, 1f, 0.5f);
+        }
+
+        public void SetPlaceholder(string text) => placeholder.text = Localization.instance.Localize(text);
+        public void SetGlow(bool enable) => glow.gameObject.SetActive(enable);
+        public void SetGlowColor(Color color) => glow.color = color;
+
+        public void OnValueChanged(UnityAction<string> action) => field.onValueChanged.AddListener(action);
+
+        public void Update()
+        {
+            SetGlow(field.isFocused);
+        }
+    }
     private class TempListItem
     {
         private readonly GameObject? Prefab;
@@ -661,6 +701,10 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
             if (!item.IsValid()) return;
             SetIcon(item.GetIcon());
         }
+
+        public bool Contains(string filter) => Label?.text.ToLower().Contains(filter.ToLower()) ?? false;
+
+        public void SetActive(bool enable) => Prefab?.SetActive(enable);
 
         public void ShowIcon(bool enable)
         {
