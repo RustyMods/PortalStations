@@ -6,6 +6,7 @@ using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using ClassSystem;
 using HarmonyLib;
 using ItemManager;
 using JetBrains.Annotations;
@@ -17,7 +18,6 @@ using PortalStations.UI;
 using ServerSync;
 using UnityEngine;
 using CraftingTable = PieceManager.CraftingTable;
-using PrefabManager = ItemManager.PrefabManager;
 
 namespace PortalStations
 {
@@ -27,7 +27,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.4.5";
+        internal const string ModVersion = "1.4.6";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private const string ConfigFileName = ModGUID + ".cfg";
@@ -59,7 +59,7 @@ namespace PortalStations
         private static ConfigEntry<float> _PersonalPortalDurabilityDrain = null!;
         public static ConfigEntry<FontManager.FontOptions> _Font = null!;
         public static ConfigEntry<PortalStationUI.BackgroundOption> BkgOption = null!;
-        public static ConfigEntry<Vector3> PanelPos = null!;
+        public static ConfigEntry<Vector2> PanelPos = null!;
         private static ConfigEntry<Toggle> _OnlyOwnersCanDestroy = null!;
         private static ConfigEntry<Toggle> _OnlyCreatorCanEdit = null!;
 
@@ -99,7 +99,7 @@ namespace PortalStations
             }));
             BkgOption = config("Settings", "Background", PortalStationUI.BackgroundOption.Opaque, "Set background of UI panel", false);
             BkgOption.SettingChanged += PortalStationUI.OnBackgroundOptionChange;
-            PanelPos = config("Settings", "Panel Position", new Vector3(1760f, 850f, 0f), "Set position of panel", false);
+            PanelPos = config("Settings", "Panel Position", new Vector2(0f, 0f), "Set position of panel", false);
             PanelPos.SettingChanged += PortalStationUI.OnPanelPositionConfigChange;
             _OnlyOwnersCanDestroy =
                 config("Settings", "Ownership", Toggle.Off, "If on, only owners can destroy portal");
@@ -230,13 +230,13 @@ namespace PortalStations
             PortalStation.RequiredItems.Add("GreydwarfEye", 10, true);
             PortalStation.Category.Set("Portal Stations");
             PortalStation.Crafting.Set(CraftingTable.Workbench);
-            PortalStation.PlaceEffects.Add("vfx_Place_stone_wall_2x1");
-            PortalStation.PlaceEffects.Add("sfx_build_hammer_stone");
-            PortalStation.HitEffects.Add("vfx_RockHit");
-            PortalStation.HitEffects.Add("sfx_rock_hit");
-            PortalStation.DestroyedEffects.Add("vfx_RockHit");
-            PortalStation.DestroyedEffects.Add("sfx_rock_destroyed");
-            PortalStation.ClonePortalSFXFrom = "portal_wood";
+            PortalStation.Usage.Set(Piece.UsageTagFlags.Transport);
+            var ps_set = PortalStation.GetPieceEffectSetter();
+            ps_set.piece?.m_placeEffect =
+                new EffectListRef("vfx_Place_stone_wall_2x1", "sfx_build_hammer_stone").m_effectList;
+            ps_set.wnt?.m_hitEffect = new EffectListRef("vfx_RockHit", "sfx_rock_hit").m_effectList;
+            ps_set.wnt?.m_destroyedEffect = new EffectListRef("vfx_RockHit", "sfx_rock_destroyed").m_effectList;
+            ps_set.ClonePortalSFXFrom = "portal_wood";
             MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStation.Prefab.transform.Find("model").gameObject, MaterialReplacer.ShaderType.PieceShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStation.Prefab.transform, "vanilla_effects").gameObject);
             PortalStation.Prefab.AddComponent<PortalStation>();
@@ -251,15 +251,14 @@ namespace PortalStations
             PortalStationOne.RequiredItems.Add("FineWood", 20, true);
             PortalStationOne.RequiredItems.Add("GreydwarfEye", 10, true);
             PortalStationOne.Category.Set("Portal Stations");
-            PortalStationOne.PlaceEffects.Add("vfx_Place_stone_wall_2x1");
-            PortalStationOne.PlaceEffects.Add("sfx_build_hammer_stone");
-            PortalStationOne.HitEffects.Add("vfx_RockHit");
-            PortalStationOne.HitEffects.Add("sfx_rock_hit");
-            PortalStationOne.DestroyedEffects.Add("vfx_RockHit");
-            PortalStationOne.DestroyedEffects.Add("sfx_rock_destroyed");
-            PortalStationOne.ClonePortalSFXFrom = "portal_wood";
+            PortalStationOne.Usage.Set(Piece.UsageTagFlags.Transport);
+            var pso_set = PortalStationOne.GetPieceEffectSetter();
+            pso_set.piece?.m_placeEffect =
+                new EffectListRef("vfx_Place_stone_wall_2x1", "sfx_build_hammer_stone").m_effectList;
+            pso_set.wnt?.m_hitEffect = new EffectListRef("vfx_RockHit", "sfx_rock_hit").m_effectList;
+            pso_set.wnt?.m_destroyedEffect = new EffectListRef("vfx_RockHit", "sfx_rock_destroyed").m_effectList;
+            pso_set.ClonePortalSFXFrom = "portal_wood";
             PortalStationOne.Crafting.Set(CraftingTable.Workbench);
-            // MaterialReplacer.RegisterGameObjectForShaderSwap(PortalStationOne.Prefab.transform.Find("VisualRoot").gameObject, MaterialReplacer.ShaderType.PieceShader);
             MaterialReplacer.RegisterGameObjectForMatSwap(Utils.FindChild(PortalStationOne.Prefab.transform, "vanilla_effects").gameObject);
             PortalStationOne.Prefab.AddComponent<PortalStation>();
             PortalStationOne.Prefab.GetComponent<ZNetView>().m_distant = true;
@@ -273,19 +272,16 @@ namespace PortalStations
             portalPlatform.RequiredItems.Add("FineWood", 20, true);
             portalPlatform.RequiredItems.Add("GreydwarfEye", 10, true);
             portalPlatform.Category.Set("Portal Stations");
-            portalPlatform.PlaceEffects.Add("vfx_Place_stone_wall_2x1");
-            portalPlatform.PlaceEffects.Add("sfx_build_hammer_stone");
-            portalPlatform.HitEffects.Add("vfx_RockHit");
-            portalPlatform.HitEffects.Add("sfx_rock_hit");
-            portalPlatform.DestroyedEffects.Add("vfx_RockHit");
-            portalPlatform.DestroyedEffects.Add("sfx_rock_destroyed");
-            portalPlatform.ClonePortalSFXFrom = "portal_wood";
+            portalPlatform.Usage.Set(Piece.UsageTagFlags.Transport);
+            var pp_set = portalPlatform.GetPieceEffectSetter();
+            pp_set.piece?.m_placeEffect =
+                new EffectListRef("vfx_Place_stone_wall_2x1", "sfx_build_hammer_stone").m_effectList;
+            pp_set.wnt?.m_hitEffect = new EffectListRef("vfx_RockHit", "sfx_rock_hit").m_effectList;
+            pp_set.wnt?.m_destroyedEffect = new EffectListRef("vfx_RockHit", "sfx_rock_destroyed").m_effectList;
+            pp_set.ClonePortalSFXFrom = "portal_wood";
+
             portalPlatform.Crafting.Set(CraftingTable.Workbench);
             portalPlatform.Prefab.GetComponent<ZNetView>().m_distant = true;
-
-            // var platformEmission = portalPlatform.Prefab.transform.Find("emissive").gameObject;
-            // platformEmission.SetActive(true);
-            // platformEmission.GetComponent<MeshRenderer>().material.color = Color.black;
             
             MaterialReplacer.MaterialData StartPlatformMat = new MaterialReplacer.MaterialData(Assets, "_REPLACE_startplatform", MaterialReplacer.ShaderType.RockShader);
             StartPlatformMat.m_floatProperties["_Glossiness"] = 0.216f;
@@ -312,13 +308,14 @@ namespace PortalStations
             portalStationDoor.RequiredItems.Add("FineWood", 20, true);
             portalStationDoor.RequiredItems.Add("GreydwarfEye", 10, true);
             portalStationDoor.Category.Set("Portal Stations");
-            portalStationDoor.PlaceEffects.Add("vfx_Place_stone_wall_2x1");
-            portalStationDoor.PlaceEffects.Add("sfx_build_hammer_wood");
-            portalStationDoor.HitEffects.Add("vfx_RockHit");
-            portalStationDoor.HitEffects.Add("sfx_rock_hit");
-            portalStationDoor.DestroyedEffects.Add("vfx_RockHit");
-            portalStationDoor.DestroyedEffects.Add("sfx_rock_destroyed");
-            portalStationDoor.ClonePortalSFXFrom = "portal_wood";
+            portalStationDoor.Usage.Set(Piece.UsageTagFlags.Transport);
+            var psd_set = portalStationDoor.GetPieceEffectSetter();
+            psd_set.piece?.m_placeEffect =
+                new EffectListRef("vfx_Place_stone_wall_2x1", "sfx_build_hammer_stone").m_effectList;
+            psd_set.wnt?.m_hitEffect = new EffectListRef("vfx_RockHit", "sfx_rock_hit").m_effectList;
+            psd_set.wnt?.m_destroyedEffect = new EffectListRef("vfx_RockHit", "sfx_rock_destroyed").m_effectList;
+            psd_set.ClonePortalSFXFrom = "portal_wood";
+
             portalStationDoor.Crafting.Set(CraftingTable.Workbench);
             portalStationDoor.Prefab.GetComponent<ZNetView>().m_distant = true;
 
@@ -352,6 +349,7 @@ namespace PortalStations
                     "The powerful energy source lets you pass through even the most valuable of items.");
                 build.Category.Set("Portal Stations");
                 build.Crafting.Set(CraftingTable.Workbench);
+                build.Usage.Set(Piece.UsageTagFlags.Transport);
             };
             
             Clone PortalStationWood = new Clone("portal_wood", "PortalStation_Wood");
@@ -378,6 +376,7 @@ namespace PortalStations
                 build.Description.English("Connects to another portal with equal of no tag.");
                 build.Category.Set("Portal Stations");
                 build.Crafting.Set(CraftingTable.Workbench);
+                build.Usage.Set(Piece.UsageTagFlags.Transport);
             };
             
             Clone BluePortalStation = new Clone("portal", "PortalStation_Blue");
@@ -404,6 +403,7 @@ namespace PortalStations
                 build.Category.Set("Portal Stations");
                 build.Description.English("Old portal - The days prior to the world.");
                 build.Crafting.Set(CraftingTable.Workbench);
+                build.Usage.Set(Piece.UsageTagFlags.Transport);
             };
         }
         private static void InitItems()

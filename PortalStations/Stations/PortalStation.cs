@@ -282,6 +282,8 @@ public class PortalStation : MonoBehaviour, Interactable, Hoverable, TextReceive
         return Localization.instance.Localize(stringBuilder.ToString());
     } 
     public string GetHoverName() => "";
+    public float GetHoverOffset() => 0f;
+
     public string GetText() => !m_nview.IsValid() ? "" : m_nview.GetZDO().GetString(StationVars.Name);
     public void SetText(string text)
     {

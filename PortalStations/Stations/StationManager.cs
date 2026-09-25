@@ -126,7 +126,7 @@ public static class StationManagerHelpers
         if (PortalStationsPlugin.TeleportAnything) return true;
         if (!PortalStationsPlugin.UsePortalKeys)
         {
-            if (player.IsTeleportable()) return true;
+            if (player.IsTeleportable(false)) return true;
             if (msg) player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return false;
         }
@@ -161,7 +161,7 @@ public static class StationManagerHelpers
 
         if (!PortalStationsPlugin.UsePortalKeys)
         {
-            if (player.IsTeleportable()) return true;
+            if (player.IsTeleportable(false)) return true;
             if (msg) player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return false;
         }

@@ -5,7 +5,7 @@
         <CorlibPath>$(ValheimGamePath)\unstripped_corlib</CorlibPath>
         <AssembliesPath>$(ValheimGamePath)\Valheim_Data\Managed</AssembliesPath>
         <PublicizedAssembliesPath>$(AssembliesPath)\publicized_assemblies</PublicizedAssembliesPath>
-        <CopyOutputDLLPath>C:\Users\peima\Desktop\VALHEIM MODDING\projects\PortalStations\PortalStations\Thunderstore</CopyOutputDLLPath>
+        <CopyOutputDLLPath>C:\Users\malco\AppData\Roaming\com.kesomannen.gale\valheim\profiles\test 1.0\BepInEx\plugins\RustyMods-PortalStations</CopyOutputDLLPath>
         <AfterTargets>ILRepacker</AfterTargets>
     </PropertyGroup>
 </Project>

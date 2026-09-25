@@ -8,7 +8,7 @@ namespace PortalStations.Managers;
 public class Clone
 {
     internal static readonly Dictionary<string, GameObject> registeredPrefabs = new();
-    private GameObject? Prefab;
+    private GameObject Prefab;
     private readonly string PrefabName;
     private readonly string NewName;
     private bool Loaded;
@@ -27,7 +27,7 @@ public class Clone
         if (Helpers.GetPrefab(PrefabName) is not { } prefab) return;
         Prefab = Object.Instantiate(prefab, PortalStationsPlugin._root.transform, false);
         Prefab.name = NewName;
-        PrefabManager.RegisterPrefab(Prefab);
+        // PrefabManager.RegisterPrefab(Prefab);
         OnCreated?.Invoke(Prefab);
         registeredPrefabs[Prefab.name] = Prefab;
         Loaded = true;

@@ -12,8 +12,8 @@
         <AssemblyName>PortalStations</AssemblyName>
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
-        <LangVersion>10</LangVersion>
-        <Nullable>enable</Nullable>
+        <LangVersion>14</LangVersion>
+<!--        <Nullable>enable</Nullable>-->
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -53,8 +53,8 @@
                 <GamePath Condition="!Exists('$(GamePath)')">C:\Program Files\Steam\steamapps\common\Valheim</GamePath>
                 <GamePath Condition="!Exists('$(GamePath)')">C:\Program Files (x86)\Steam\steamapps\common\Valheim</GamePath>
                 <GamePath Condition="!Exists('$(GamePath)')">D:\SteamLibrary\steamapps\common\Valheim</GamePath>
-                <BepInExPath Condition="!Exists('$(BepInExPath)')AND Exists('$(GamePath)')">$(GamePath)\BepInEx</BepInExPath>
-                <CorlibPath Condition="!Exists('$(CorlibPath)') AND Exists('$(GamePath)')">$(GamePath)\unstripped_corlib</CorlibPath>
+                <BepInExPath Condition="!Exists('$(BepInExPath)')AND Exists('$(GamePath)')">C:\Users\malco\AppData\Roaming\com.kesomannen.gale\valheim\profiles\test 1.0\BepInEx</BepInExPath>
+                <CorlibPath Condition="!Exists('$(CorlibPath)') AND Exists('$(GamePath)')">$(GamePath)\valheim_Data\Managed</CorlibPath>
                 <PublicizedAssembliesPath Condition="!Exists('$(PublicizedAssembliesPath)') AND Exists('$(GamePath)')">$(GamePath)\valheim_Data\Managed\publicized_assemblies</PublicizedAssembliesPath>
                 <AfterTargets Condition="'$(AfterTargets)' == ''">ILRepacker</AfterTargets>
             </PropertyGroup>
@@ -86,10 +86,10 @@
             <HintPath>Libs\ServerSync.dll</HintPath>
         </Reference>
         <Reference Include="SoftReferenceableAssets">
-          <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\SoftReferenceableAssets_publicized.dll</HintPath>
+          <HintPath>$(PublicizedAssembliesPath)\SoftReferenceableAssets_publicized.dll</HintPath>
         </Reference>
         <Reference Include="Splatform">
-          <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\Splatform_publicized.dll</HintPath>
+          <HintPath>$(PublicizedAssembliesPath)\Splatform_publicized.dll</HintPath>
         </Reference>
         <Reference Include="System" />
         <Reference Include="System.Core" />
@@ -102,7 +102,7 @@
             <HintPath>$(CorlibPath)\UnityEngine.AssetBundleModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.AudioModule">
-          <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+          <HintPath>$(CorlibPath)\UnityEngine.AudioModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.CoreModule">
             <HintPath>$(CorlibPath)\UnityEngine.CoreModule.dll</HintPath>
@@ -114,7 +114,7 @@
           <HintPath>$(AssembliesPath)\UnityEngine.InputLegacyModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ParticleSystemModule">
-          <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+          <HintPath>$(CorlibPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.PhysicsModule">
             <HintPath>$(CorlibPath)\UnityEngine.PhysicsModule.dll</HintPath>
@@ -132,10 +132,12 @@
     <ItemGroup>
         <Compile Include="Managers\AssetBundleManager.cs" />
         <Compile Include="Managers\Clone.cs" />
+        <Compile Include="Managers\EffectRef.cs" />
         <Compile Include="Managers\Helpers.cs" />
         <Compile Include="Managers\LocalizationManager.cs" />
         <Compile Include="Managers\ItemManager.cs" />
         <Compile Include="Managers\MaterialReplacer.cs" />
+        <Compile Include="Managers\PieceEffectSetter.cs" />
         <Compile Include="Managers\PieceManager.cs" />
         <Compile Include="Managers\PrefabManager.cs" />
         <Compile Include="Plugin.cs" />
@@ -170,7 +172,6 @@
         <Content Include="Thunderstore\CHANGELOG.md" />
         <Content Include="Thunderstore\icon.png" />
         <Content Include="Thunderstore\manifest.json" />
-        <Content Include="Thunderstore\PortalStations.dll" />
         <Content Include="Thunderstore\README.md" />
         <Content Include="UpdateManifest.ps1" />
     </ItemGroup>

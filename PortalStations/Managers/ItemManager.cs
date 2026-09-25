@@ -23,10 +23,12 @@ public enum CraftingTable
 	Inventory,
 	[InternalName("piece_workbench")] Workbench,
 	[InternalName("piece_cauldron")] Cauldron,
+	[InternalName("piece_MeadCauldron")] MeadCauldron,
 	[InternalName("forge")] Forge,
 	[InternalName("piece_artisanstation")] ArtisanTable,
 	[InternalName("piece_stonecutter")] StoneCutter,
 	[InternalName("piece_magetable")] MageTable,
+	[InternalName("piece_preptable")] PrepTable,
 	[InternalName("blackforge")] BlackForge,
 	Custom,
 }
@@ -42,16 +44,6 @@ public enum ConversionPiece
 	[InternalName("piece_spinningwheel")] SpinningWheel,
 	[InternalName("eitrrefinery")] EitrRefinery,
 	Custom,
-}
-
-[PublicAPI]
-public enum CookingPiece
-{
-	Disabled,
-	[InternalName("piece_oven")] Oven,
-	[InternalName("piece_cookingstation")] CookingStation,
-	[InternalName("piece_cookingstation_iron")] IronCookingStation,
-	Custom
 }
 
 public class InternalName : Attribute
@@ -209,24 +201,6 @@ public class Item
 	private TraderConfig? traderConfig;
 
 	public readonly GameObject Prefab;
-	public List<string> StartEffects = new();
-	public List<string> HoldEffects = new();
-	public List<string> EquipEffects = new();
-	public List<string> UnEquipEffects = new();
-	public List<string> TriggerEffects = new();
-	public List<string> TrailStartEffects = new();
-	public string CloneEffectsFrom = "";
-	public void AddConsumeStatusEffect(StatusEffect statusEffect)
-	{
-		ItemDrop.ItemData.SharedData data = Prefab.GetComponent<ItemDrop>().m_itemData.m_shared;
-		data.m_consumeStatusEffect = statusEffect;
-	}
-
-	public void AddSetStatusEffect(StatusEffect statusEffect)
-	{
-		ItemDrop.ItemData.SharedData data = Prefab.GetComponent<ItemDrop>().m_itemData.m_shared;
-		data.m_setStatusEffect = statusEffect;
-	}
 
 	[Description("Specifies the resources needed to craft the item.\nUse .Add to add resources with their internal ID and an amount.\nUse one .Add for each resource type the item should need.")]
 	public RequiredResourceList RequiredItems => this[""].RequiredItems;
@@ -274,10 +248,6 @@ public class Item
 
 	internal List<Conversion> Conversions = new();
 	internal List<Smelter.ItemConversion> conversions = new();
-	// Added code
-	internal List<CookingConversion> CookingConversions = new();
-	internal List<CookingStation.ItemConversion> cookingConversions = new();
-	//
 	public Dictionary<string, ItemRecipe> Recipes = new();
 
 	public ItemRecipe this[string name]
@@ -677,109 +647,6 @@ public class Item
 						conversion.config.customPiece.SettingChanged += (_, _) => UpdatePiece();
 					}
 				}
-				
-				for (int i = 0; i < item.CookingConversions.Count; ++i)
-                {
-                    string prefix = item.CookingConversions.Count > 1 ? $"{i + 1}" : "";
-                    CookingConversion conversion = item.CookingConversions[i];
-                    conversion.config = new CookingConversion.ConversionConfig();
-                    int index = i;
-
-                    void UpdatePiece()
-                    {
-                        if (index >= item.cookingConversions.Count || !ZNetScene.instance) return;
-                        string? newPieceName = conversion.config.piece.Value is not CookingPiece.Disabled
-                            ? conversion.config.piece.Value == CookingPiece.Custom
-                                ? conversion.config.customPiece.Value
-                                : getInternalName(conversion.config.piece.Value)
-                            : null;
-                        string? activePiece = conversion.config.activePiece;
-                        if (conversion.config.activePiece is not null)
-                        {
-                            CookingStation station = ZNetScene.instance.GetPrefab(conversion.config.activePiece)
-                                .GetComponent<CookingStation>();
-                            int removeIndex = station.m_conversion.IndexOf(item.cookingConversions[index]);
-                            if (removeIndex >= 0)
-                            {
-                                foreach (CookingStation instantiatedStation in Resources
-                                             .FindObjectsOfTypeAll<CookingStation>())
-                                {
-                                    if (Utils.GetPrefabName(instantiatedStation.gameObject) == activePiece)
-                                    {
-                                        instantiatedStation.m_conversion.RemoveAt(removeIndex);
-                                    }
-                                }
-                            }
-
-                            conversion.config.activePiece = null;
-                        }
-
-                        if (item.cookingConversions[index].m_from is not null &&
-                            conversion.config.piece.Value is not CookingPiece.Disabled)
-                        {
-                            if (ZNetScene.instance.GetPrefab(newPieceName)
-                                    ?.GetComponent<CookingStation>() is not null)
-                            {
-                                conversion.config.activePiece = newPieceName;
-                                foreach (CookingStation instantiatedStation in Resources
-                                             .FindObjectsOfTypeAll<CookingStation>())
-                                {
-                                    if (Utils.GetPrefabName(instantiatedStation.gameObject) == newPieceName)
-                                    {
-                                        instantiatedStation.m_conversion.Add(item.cookingConversions[index]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    conversion.config.cookTime = config(englishName, $"{prefix}Cook Time", conversion.CookTime,
-                        new ConfigDescription($"{prefix}Cook Time", null, new ConfigurationManagerAttributes()
-                        {
-                            Category = localizedName,
-                            Browsable = (item.configurationVisible & Configurability.Recipe) != 0
-                        }));
-                    conversion.config.cookTime.SettingChanged += (_, _) =>
-                    {
-                        item.cookingConversions[index].m_cookTime = conversion.config.cookTime.Value;
-                        UpdatePiece();
-                    };
-
-                    conversion.config.input = config(englishName, $"{prefix}Conversion Input Item",
-                        conversion.Input, new ConfigDescription($"Input item to create {englishName}", null,
-                            new ConfigurationManagerAttributes()
-                            {
-                                Category = localizedName,
-                                Browsable = (item.configurationVisible & Configurability.Recipe) != 0
-                            }));
-                    conversion.config.input.SettingChanged += (_, _) =>
-                    {
-                        if (index < item.cookingConversions.Count && ObjectDB.instance is { } objectDB)
-                        {
-                            ItemDrop? inputItem =
-                                SerializedRequirements.fetchByName(objectDB, conversion.config.input.Value);
-                            item.cookingConversions[index].m_from = inputItem;
-                            UpdatePiece();
-                        }
-                    };
-                    conversion.config.piece = config(englishName, $"{prefix}Conversion Piece", conversion.Piece,
-                        new ConfigDescription($"Conversion piece used to create {englishName}", null,
-                            new ConfigurationManagerAttributes()
-                            {
-                                Category = localizedName,
-                                Browsable = (item.configurationVisible & Configurability.Recipe) != 0
-                            }));
-                    conversion.config.piece.SettingChanged += (_, _) => UpdatePiece();
-                    conversion.config.customPiece = config(englishName, $"{prefix}Conversion Custom Piece",
-                        conversion.customPiece ?? "", new ConfigDescription(
-                            $"Custom conversion piece to create {englishName}", null,
-                            new ConfigurationManagerAttributes()
-                            {
-                                Category = localizedName,
-                                Browsable = (item.configurationVisible & Configurability.Recipe) != 0
-                            }));
-                    conversion.config.customPiece.SettingChanged += (_, _) => UpdatePiece();
-                }
 
 				if ((item.configurability & Configurability.Stats) != 0)
 				{
@@ -1381,57 +1248,14 @@ public class Item
 		return true;
 	}
 
-	public void AssignItemEffects()
-	{
-		if (!Prefab.TryGetComponent(out ItemDrop component)) return;
-		CloneEffects();
-		UpdateEffects(StartEffects, ref component.m_itemData.m_shared.m_startEffect);
-		UpdateEffects(HoldEffects, ref component.m_itemData.m_shared.m_holdStartEffect);
-		UpdateEffects(EquipEffects, ref component.m_itemData.m_shared.m_equipEffect);
-		UpdateEffects(UnEquipEffects, ref component.m_itemData.m_shared.m_unequipEffect);
-		UpdateEffects(TriggerEffects, ref component.m_itemData.m_shared.m_triggerEffect);
-		UpdateEffects(TrailStartEffects, ref component.m_itemData.m_shared.m_trailStartEffect);
-	}
-
-	internal void CloneEffects()
-	{
-		if (CloneEffectsFrom.IsNullOrWhiteSpace()) return;
-		var original = ZNetScene.instance.GetPrefab(CloneEffectsFrom);
-		if (!original || !original.TryGetComponent(out ItemDrop component)) return;
-		var shared = Prefab.GetComponent<ItemDrop>().m_itemData.m_shared;
-		shared.m_hitEffect = component.m_itemData.m_shared.m_hitEffect;
-		shared.m_hitTerrainEffect = component.m_itemData.m_shared.m_hitTerrainEffect;
-		shared.m_blockEffect = component.m_itemData.m_shared.m_blockEffect;
-		shared.m_holdStartEffect = component.m_itemData.m_shared.m_holdStartEffect;
-		shared.m_equipEffect = component.m_itemData.m_shared.m_equipEffect;
-		shared.m_unequipEffect = component.m_itemData.m_shared.m_unequipEffect;
-		shared.m_triggerEffect = component.m_itemData.m_shared.m_triggerEffect;
-		shared.m_trailStartEffect = component.m_itemData.m_shared.m_trailStartEffect;
-	}
-	
-	internal void UpdateEffects(List<string> effects, ref EffectList effectList)
-	{
-		if (effects.Count <= 0) return;
-		List<EffectList.EffectData> data = effectList.m_effectPrefabs.ToList();
-		foreach (string effect in effects)
-		{
-			GameObject? prefab = ZNetScene.instance.GetPrefab(effect);
-			if (!prefab) continue;
-			data.Add(new EffectList.EffectData() { m_prefab = prefab });
-		}
-
-		effectList.m_effectPrefabs = data.ToArray();
-	}
-
 	internal static void Patch_ZNetSceneAwake(ZNetScene __instance)
 	{
 		foreach (Item item in registeredItems)
 		{
 			item.AssignDropToCreature();
-			item.AssignItemEffects();
 		}
 	}
-	
+
 	public void AssignDropToCreature()
 	{
 		foreach (KeyValuePair<CharacterDrop, CharacterDrop.Drop> kv in characterDrops)
@@ -1995,7 +1819,10 @@ public class LocalizeKey
 			alias = $"${alias}";
 		}
 		Localizations["alias"] = alias;
-		Localization.instance.AddWord(Key, Localization.instance.Localize(alias));
+		if (Localization.m_instance != null)
+		{
+			Localization.instance.AddWord(Key, Localization.instance.Localize(alias));
+		}
 	}
 
 	public LocalizeKey English(string key) => addForLang("English", key);
@@ -2036,14 +1863,18 @@ public class LocalizeKey
 	private LocalizeKey addForLang(string lang, string value)
 	{
 		Localizations[lang] = value;
-		if (Localization.instance.GetSelectedLanguage() == lang)
+		if (Localization.m_instance != null)
 		{
-			Localization.instance.AddWord(Key, value);
+			if (Localization.instance.GetSelectedLanguage() == lang)
+			{
+				Localization.instance.AddWord(Key, value);
+			}
+			else if (lang == "English" && !Localization.instance.m_translations.ContainsKey(Key))
+			{
+				Localization.instance.AddWord(Key, value);
+			}
 		}
-		else if (lang == "English" && !Localization.instance.m_translations.ContainsKey(Key))
-		{
-			Localization.instance.AddWord(Key, value);
-		}
+
 		return this;
 	}
 
@@ -2206,8 +2037,6 @@ public static class PrefabManager
 		__instance.UpdateRegisters();
 	}
 
-
-	
 	[HarmonyPriority(Priority.VeryHigh)]
 	private static void Patch_ZNetSceneAwake(ZNetScene __instance)
 	{
@@ -2258,40 +2087,7 @@ public class Conversion
 	}
 }
 
-[PublicAPI]
-public class CookingConversion
+public static class ItemManagerVersion
 {
-	internal class ConversionConfig
-	{
-		public ConfigEntry<string> input = null!;
-		public string? activePiece;
-		public ConfigEntry<CookingPiece> piece = null!;
-		public ConfigEntry<string> customPiece = null!;
-		public ConfigEntry<float> cookTime = null!;
-	}
-
-	public CookingPiece Piece;
-	public string Input;
-	public float CookTime;
-	internal string? customPiece = null;
-
-	public string? Custom
-	{
-		get => customPiece;
-		set
-		{
-			customPiece = value;
-			Piece = CookingPiece.Custom;
-		}
-	}
-
-	internal ConversionConfig? config;
-
-	public CookingConversion(Item inputItem, Item outputItem, CookingPiece piece, float cookTime)
-	{
-		Piece = piece;
-		CookTime = cookTime;
-		Input = inputItem.Prefab.name;
-		outputItem.CookingConversions.Add(this);
-	}
+	public const string Version = "1.2.9";
 }

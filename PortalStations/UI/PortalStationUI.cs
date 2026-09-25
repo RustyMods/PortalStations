@@ -22,18 +22,18 @@ public static class Load_PortalStation_UI
     [UsedImplicitly]
     private static void Postfix(InventoryGui __instance)
     {
-        GameObject? panel = AssetBundleManager.LoadAsset<GameObject>("stationui", "PortalStationUI");
+        GameObject panel = AssetBundleManager.LoadAsset<GameObject>("stationui", "PortalStationUI");
         if (panel == null)
         {
             Debug.LogWarning("Couldn't find PortalStationUI");
             return;
         }
         GameObject craftingPanel = __instance.m_crafting.gameObject;
-        GameObject? go = Object.Instantiate(panel, __instance.transform.parent.Find("HUD"));
+        GameObject go = Object.Instantiate(panel, __instance.transform.parent.Find("HUD"));
         go.name = "PortalStationUI";
         
-        Text[]? panelTexts = go.GetComponentsInChildren<Text>(true);
-        Text[]? listItemTexts = PortalStationUI.ListItem.GetComponentsInChildren<Text>(true);
+        Text[] panelTexts = go.GetComponentsInChildren<Text>(true);
+        Text[] listItemTexts = PortalStationUI.ListItem.GetComponentsInChildren<Text>(true);
         
         go.CopySpriteAndMaterial(craftingPanel, "Panel/Selected", "selected_frame/selected (1)");
         go.CopySpriteAndMaterial(craftingPanel, "Panel/bkg", "Bkg");
@@ -96,8 +96,8 @@ public static class Load_PortalStation_UI
         go.CopySpriteAndMaterial(craftingPanel, "Panel/LeftPanel/SearchField/Glow", "RepairButton/Glow");
         
         PortalStationUI.ListItem.CopySpriteAndMaterial(craftingPanel, "Icon", "RecipeList/Recipes/RecipeElement/icon");
-        GameObject? sfx = craftingPanel.GetComponentInChildren<ButtonSfx>().m_sfxPrefab;
-        foreach (ButtonSfx? component in go.GetComponentsInChildren<ButtonSfx>(true)) component.m_sfxPrefab = sfx;
+        GameObject sfx = craftingPanel.GetComponentInChildren<ButtonSfx>().m_sfxPrefab;
+        foreach (ButtonSfx component in go.GetComponentsInChildren<ButtonSfx>(true)) component.m_sfxPrefab = sfx;
         FontManager.SetFont(panelTexts);
         FontManager.SetFont(listItemTexts);
         
@@ -151,10 +151,10 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     public static readonly GameObject ListItem = AssetBundleManager.LoadAsset<GameObject>("stationui", "PortalStationItem")!;
     public enum BackgroundOption { Opaque, Transparent }
     
-    public static PortalStationUI? instance;
-    private static Minimap.PinData? m_tempPin; 
-    private static Sprite? m_defaultIcon;
-    private static Sprite? m_starIcon;
+    public static PortalStationUI instance;
+    private static Minimap.PinData m_tempPin; 
+    private static Sprite m_defaultIcon;
+    private static Sprite m_starIcon;
 
     private RectTransform m_rect = null!;
     private Image Selected = null!;
@@ -174,9 +174,9 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     private Requirement Requirements = null!;
     private Text MapButtonText = null!;
     
-    private readonly List<TempListItem> StationItems = new();
+    private readonly List<TempListItem> StationItems = [];
 
-    public void OnFontChange(Font? font)
+    public void OnFontChange(Font font)
     {
         foreach (var item in StationItems)
         {
@@ -186,18 +186,18 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     private readonly List<Tab> Tabs = new();
 
     public DeviceType m_deviceType = DeviceType.None;
-    public PortalStation? m_currentStation;
-    private StationInfo? m_currentStationInfo;
-    private TempListItem? m_currentStationItem;
-    public ItemDrop.ItemData? m_currentItem;
-    private StationInfo? m_destination;
-    private ScrollRect[]? scrollRects;
-    private SearchField? search;
+    public PortalStation m_currentStation;
+    private StationInfo m_currentStationInfo;
+    private TempListItem m_currentStationItem;
+    public ItemDrop.ItemData m_currentItem;
+    private StationInfo m_destination;
+    private ScrollRect[] scrollRects;
+    private SearchField search;
     private float m_listItemHeight;
     private float m_leftListMinHeight;
     private float m_pinTimer;
     private Vector3 mouseDifference = Vector3.zero;
-    private Action<float>? OnUpdate;
+    private Action<float> OnUpdate;
     
     public enum DeviceType { None, Station, Item }
 
@@ -288,7 +288,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     public void CenterPanel()
     {
         Utils.ClampUIToScreen(m_rect);
-        PortalStationsPlugin.PanelPos.Value = m_rect.position;
+        PortalStationsPlugin.PanelPos.Value = m_rect.anchoredPosition;
     }
 
     public void Start()
@@ -325,6 +325,11 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         if (!ZInput.GetKeyDown(KeyCode.Escape) && !ZInput.GetKeyDown(KeyCode.Tab)) return;
         Hide();
     }
+
+    public void UpdateMainButton()
+    {
+        MainButton.interactable = m_destination != null;
+    }
     
     public void OnDestroy()
     {
@@ -333,7 +338,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
 
     public void OnSearch(string input)
     {
-        foreach (TempListItem? item in StationItems)
+        foreach (TempListItem item in StationItems)
         {
             item.SetActive(item.Contains(input));
         }
@@ -355,11 +360,17 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         SetTopic(m_currentStationInfo.Name);
         OnUpdate = null;
         Requirements.SetActive(false);
-        m_destination = null;
+        SetDestination(null);
         SettingTab.Enable(!PortalStationsPlugin.OnlyOwnerCanEdit || m_currentStationInfo.CreatorID == player.GetPlayerID());
         PlayerTab.Enable(PortalStationsPlugin.PortalToPlayers);
         StationTab.Enable(PortalStationsPlugin.PortalToStations);
     }
+
+    public void SetDestination(StationInfo destination)
+    {
+        m_destination = destination;
+        UpdateMainButton();
+    } 
 
     public void Show(Player user, ItemDrop.ItemData item)
     {
@@ -376,7 +387,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         OnUpdate = null;
         MainButton.gameObject.SetActive(false);
         Requirements.SetActive(false);
-        m_destination = null;
+        SetDestination(null);
         PlayerTab.Enable(PortalStationsPlugin.PortalToPlayers);
         SettingTab.Enable(false);
         StationTab.Enable(PortalStationsPlugin.PortalToStations);
@@ -392,7 +403,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         Description.SetView(RightPanel.PanelView.Body);
         OnUpdate = null;
         Requirements.SetActive(false);
-        m_destination = null;
+        SetDestination(null);
     }
 
     public void OnFavoriteTab()
@@ -405,7 +416,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         Description.SetView(RightPanel.PanelView.Body);
         OnUpdate = null;
         Requirements.SetActive(false);
-        m_destination = null;
+        SetDestination(null);
     }
 
     public void OnPlayerTab()
@@ -418,7 +429,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         Description.SetView(RightPanel.PanelView.Body);
         OnUpdate = null;
         Requirements.SetActive(false);
-        m_destination = null;
+        SetDestination(null);
     }
 
     public void OnSettingTab()
@@ -457,7 +468,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         }
         OnUpdate = null;
         Requirements.SetActive(false);
-        m_destination = null;
+        SetDestination(null);
     }
 
     public void DestroyTempItems()
@@ -492,7 +503,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
             Description.SetBodyText(portableInfo.GetTooltip());
             Description.ShowMapButton(portableInfo);
             Requirements.LoadTeleportCost(portableInfo);
-            m_destination = portableInfo;
+            SetDestination(portableInfo);
             Requirements.favorite.SetFavorite(portableInfo.IsFavorite);
             MainButton.gameObject.SetActive(true);
             MainButton.interactable = portableInfo.CanTeleport(false);
@@ -522,7 +533,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
                 Description.SetBodyText(info.GetTooltip());
                 Description.ShowMapButton(info);
                 Requirements.LoadTeleportCost(info);
-                m_destination = info;
+                SetDestination(info);
                 Requirements.favorite.SetFavorite(info.IsFavorite);
                 MainButton.gameObject.SetActive(true);
                 MainButton.interactable = info.CanTeleport(false);
@@ -551,30 +562,10 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
                 Requirements.LoadTeleportCost(info);
                 Requirements.favorite.SetFavorite(info.IsFavorite);
                 MainButton.gameObject.SetActive(true);
-                m_destination = info;
+                SetDestination(info);
             });
         }
         
-        
-        // foreach (ZNetPeer? peer in ZNet.instance.GetPeers())
-        // {
-        //     StationInfo info = new StationInfo(peer);
-        //     if (!info.IsValid) continue;
-        //     TempListItem item = new TempListItem();
-        //     item.SetLabel(info.Name);
-        //     item.SetIcon(Minimap.instance.GetSprite(Minimap.PinType.Icon1));
-        //     item.SetButton(() =>
-        //     {
-        //         item.SetSelected(true);
-        //         Description.SetName(info.Name);
-        //         Description.SetBodyText(info.GetTooltip());
-        //         Description.ShowMapButton(info);
-        //         Requirements.LoadTeleportCost(info);
-        //         Requirements.favorite.SetFavorite(info.IsFavorite);
-        //         MainButton.gameObject.SetActive(true);
-        //         m_destination = info;
-        //     });
-        // }
         ResizeLeftList();
     }
 
@@ -650,7 +641,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         instance.SetPanelPosition(config.Value);
     }
 
-    public void SetPanelPosition(Vector3 pos) => m_rect.position = pos;
+    public void SetPanelPosition(Vector3 pos) => m_rect.anchoredPosition = pos;
     public void UpdatePin(float dt)
     {
         if (m_tempPin == null) return;
@@ -665,7 +656,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         Vector3 pos = Description.SelectedStation.Position;
         Hide();
         if (m_tempPin != null) Minimap.instance.RemovePin(m_tempPin);
-        Minimap.PinData? pin = Minimap.instance.AddPin(pos, Minimap.PinType.Icon2, Description.SelectedStation.Name, false, false);
+        Minimap.PinData pin = Minimap.instance.AddPin(pos, Minimap.PinType.Icon2, Description.SelectedStation.Name, false, false);
         Minimap.instance.ShowPointOnMap(pos);
         m_tempPin = pin;
         m_pinTimer = 100f;
@@ -693,7 +684,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        PortalStationsPlugin.PanelPos.Value = m_rect.position;
+        PortalStationsPlugin.PanelPos.Value = m_rect.anchoredPosition;
     }
 
     private class SearchField
@@ -722,11 +713,11 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
     }
     private class TempListItem
     {
-        private readonly GameObject? Prefab;
-        private readonly Button? Button;
-        private readonly Image? Icon;
-        private readonly Text? Label;
-        private readonly GameObject? Selected;
+        private readonly GameObject Prefab;
+        private readonly Button Button;
+        private readonly Image Icon;
+        private readonly Text Label;
+        private readonly GameObject Selected;
         private bool IsSelected => Selected != null && Selected.activeInHierarchy;
 
         public TempListItem()
@@ -746,13 +737,13 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
             Label.text = Localization.instance.Localize(label);
         }
 
-        public void SetFont(Font? font)
+        public void SetFont(Font font)
         {
             if (Label == null) return;
             Label.font = font;
         }
 
-        public void SetIcon(Sprite? sprite)
+        public void SetIcon(Sprite sprite)
         {
             if (Icon == null) return;
             Icon.sprite = sprite;
@@ -795,7 +786,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         {
             if (IsSelected) return;
             if (Selected == null || instance == null) return;
-            foreach (TempListItem? temp in instance.StationItems)
+            foreach (TempListItem temp in instance.StationItems)
             {
                 if (temp.Selected == null) continue;
                 temp.Selected.SetActive(false);
@@ -875,7 +866,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         public readonly StateButton Private;
         public readonly StateButton Guild;
         public readonly StateButton Group;
-        public StationInfo? SelectedStation;
+        public StationInfo SelectedStation;
         
         private readonly float BodyMinHeight;
         public enum PanelView {Body, Settings}
@@ -1111,7 +1102,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
             int total = destination.GetCost(Player.m_localPlayer);
             int maxStack = fuelItem.m_itemData.m_shared.m_maxStackSize;
 
-            foreach (RequirementItem? item in items)
+            foreach (RequirementItem item in items)
             {
                 if (total <= 0)
                 {
@@ -1126,10 +1117,10 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
             instance.OnUpdate = dt => Update(dt, Player.m_localPlayer);
         }
 
-        private void Update(float dt, Player? player)
+        private void Update(float dt, Player player)
         {
             if (player is null) return;
-            foreach (RequirementItem? item in items) item.Update(dt, player);
+            foreach (RequirementItem item in items) item.Update(dt, player);
         }
         
         public void SetActive(bool active) => Prefab.SetActive(active);
@@ -1140,7 +1131,7 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
             private readonly Text Name;
             private readonly Text Amount;
 
-            private string? SharedName;
+            private string SharedName;
             private int Count;
 
             public RequirementItem(Image icon, Text name, Text amount)
@@ -1237,9 +1228,9 @@ public class PortalStationUI : MonoBehaviour, IDragHandler, IBeginDragHandler, I
         public int Filter;
         public bool IsFavorite;
         public bool IsFree;
-        public readonly string? GUID;
+        public readonly string GUID;
         public bool IsValid => !string.IsNullOrEmpty(Name) && Name != "Stranger" && Position != Vector3.zero;
-        private readonly ZDO? zdo;
+        private readonly ZDO zdo;
         private static readonly StringBuilder sb = new StringBuilder();
         
         private enum FilterOptions

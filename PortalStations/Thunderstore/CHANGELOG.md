@@ -1,3 +1,10 @@
+### 1.4.6
+- deep north update
+- updated server sync
+- updated piece manager
+- updated UI position
+- updated item manager
+
 ### 1.4.5
 - fixed teleport cost only being 1
 - added code to make sure panel is always within screen bounds on first game load
