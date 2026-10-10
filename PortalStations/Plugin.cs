@@ -18,7 +18,7 @@ using PortalStations.UI;
 using ServerSync;
 using UnityEngine;
 using CraftingTable = PieceManager.CraftingTable;
-
+#nullable enable
 namespace PortalStations
 {
     [BepInDependency("org.bepinex.plugins.groups", BepInDependency.DependencyFlags.SoftDependency)]
@@ -27,7 +27,7 @@ namespace PortalStations
     public class PortalStationsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "PortalStations";
-        internal const string ModVersion = "1.4.6";
+        internal const string ModVersion = "1.4.7";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         private const string ConfigFileName = ModGUID + ".cfg";

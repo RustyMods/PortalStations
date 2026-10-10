@@ -6,6 +6,7 @@
         <AssembliesPath>$(ValheimGamePath)\Valheim_Data\Managed</AssembliesPath>
         <PublicizedAssembliesPath>$(AssembliesPath)\publicized_assemblies</PublicizedAssembliesPath>
         <CopyOutputDLLPath>C:\Users\malco\AppData\Roaming\com.kesomannen.gale\valheim\profiles\test 1.0\BepInEx\plugins\RustyMods-PortalStations</CopyOutputDLLPath>
+        <CopyOutputDLLPath2>C:\Users\malco\Desktop\Solutions\Portal Station\PortalStations\Thunderstore</CopyOutputDLLPath2>
         <AfterTargets>ILRepacker</AfterTargets>
     </PropertyGroup>
 </Project>

@@ -1,6 +1,6 @@
 {
 	"name": "PortalStations",
-	"version_number": "1.4.6",
+	"version_number": "1.4.7",
 	"website_url": "https://github.com/RustyMods/PortalStations",
 	"description": "Adds Portal Stations and a Personal Teleportation Device which allow users to fast travel between locations.",
 	"dependencies": [

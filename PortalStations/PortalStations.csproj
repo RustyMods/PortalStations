@@ -10,7 +10,7 @@
         <AppDesignerFolder>Properties</AppDesignerFolder>
         <RootNamespace>PortalStations</RootNamespace>
         <AssemblyName>PortalStations</AssemblyName>
-        <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+        <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
         <LangVersion>14</LangVersion>
 <!--        <Nullable>enable</Nullable>-->
@@ -130,6 +130,7 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="APIs\ABAPI.cs" />
         <Compile Include="Managers\AssetBundleManager.cs" />
         <Compile Include="Managers\Clone.cs" />
         <Compile Include="Managers\EffectRef.cs" />
@@ -172,6 +173,7 @@
         <Content Include="Thunderstore\CHANGELOG.md" />
         <Content Include="Thunderstore\icon.png" />
         <Content Include="Thunderstore\manifest.json" />
+        <Content Include="Thunderstore\PortalStations.dll" />
         <Content Include="Thunderstore\README.md" />
         <Content Include="UpdateManifest.ps1" />
     </ItemGroup>

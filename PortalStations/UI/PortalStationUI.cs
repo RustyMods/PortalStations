@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BepInEx.Configuration;
+using Guilds;
 using Groups;
 using HarmonyLib;
 using JetBrains.Annotations;
@@ -1412,7 +1413,7 @@ public static class StationHelpers
 
     public static bool IsInGroup(this Player player, long creatorID)
     {
-        return !API.IsLoaded() || API.GroupPlayers().ConvertAll(p => p.peerId).Contains(creatorID);
+        return !Groups.API.IsLoaded() || Groups.API.GroupPlayers().ConvertAll(p => p.peerId).Contains(creatorID);
     }
     public static string GetGuild(this ZNetPeer peer)
     {
@@ -1438,7 +1439,7 @@ public static class StationHelpers
 
     public static List<string> GetGroupMembers()
     {
-        List<PlayerReference> players = API.GroupPlayers();
+        List<Groups.PlayerReference> players = Groups.API.GroupPlayers();
         return players.ConvertAll(p => p.name);
     }
 }

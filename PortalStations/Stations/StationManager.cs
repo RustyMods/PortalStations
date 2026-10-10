@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using AdventureBackpacks.API.Client;
 using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -130,6 +131,7 @@ public static class StationManagerHelpers
             if (msg) player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return false;
         }
+
         Dictionary<string, string> prefabToKeyMap = new PortalStationsPlugin.SerializedKeys(PortalStationsPlugin.PortalKeys).Keys;;
         Dictionary<string, string> sharedNames = new Dictionary<string, string>();
         foreach (KeyValuePair<string, string> kvp in prefabToKeyMap)
@@ -137,10 +139,21 @@ public static class StationManagerHelpers
             if (!itemSharedNamesMap.TryGetValue(kvp.Key, out string sharedName)) continue;
             sharedNames.Add(sharedName, kvp.Value);
         }
-        foreach (ItemDrop.ItemData? item in Player.m_localPlayer.GetInventory().GetAllItems())
+        
+        var items = Player.m_localPlayer.GetInventory().GetAllItems().ToList();
+        if (ABAPIClient.IsAvailable && ABAPIClient.GetEquippedBackpackInventory(Player.m_localPlayer) is
+                { } backpackInventory)
+        {
+            items.AddRange(backpackInventory.GetAllItems());
+        }
+        
+        foreach (ItemDrop.ItemData item in items)
         {
             if (item.m_shared.m_teleportable) continue;
-            if (!sharedNames.TryGetValue(item.m_shared.m_name, out string? key))
+
+            if (ABAPIClient.IsAvailable && ABAPIClient.IsBackpack(item)) continue;
+            
+            if (!sharedNames.TryGetValue(item.m_shared.m_name, out string key))
             {
                 if (msg) player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
                 return false;
@@ -165,6 +178,7 @@ public static class StationManagerHelpers
             if (msg) player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
             return false;
         }
+
         
         Dictionary<string, string> prefabToKeyMap;
         string normalizedName = station.name.Replace("(Clone)", string.Empty);
@@ -187,11 +201,21 @@ public static class StationManagerHelpers
             if (!itemSharedNamesMap.TryGetValue(kvp.Key, out string sharedName)) continue;
             sharedNames.Add(sharedName, kvp.Value);
         }
+
+        var items = Player.m_localPlayer.GetInventory().GetAllItems().ToList();
+        if (ABAPIClient.IsAvailable && ABAPIClient.GetEquippedBackpackInventory(Player.m_localPlayer) is
+                { } backpackInventory)
+        {
+            items.AddRange(backpackInventory.GetAllItems());
+        }
             
-        foreach (ItemDrop.ItemData? item in Player.m_localPlayer.GetInventory().GetAllItems())
+        foreach (ItemDrop.ItemData item in items)
         {
             if (item.m_shared.m_teleportable) continue;
-            if (!sharedNames.TryGetValue(item.m_shared.m_name, out string? key))
+
+            if (ABAPIClient.IsAvailable && ABAPIClient.IsBackpack(item)) continue;
+            
+            if (!sharedNames.TryGetValue(item.m_shared.m_name, out string key))
             {
                 if (msg) player.Message(MessageHud.MessageType.Center, "$msg_noteleport");
                 return false;
@@ -206,4 +230,6 @@ public static class StationManagerHelpers
 
         return true;
     }
+    
+    
 }

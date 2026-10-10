@@ -13,7 +13,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
-
+#nullable enable
 namespace ItemManager;
 
 [PublicAPI]

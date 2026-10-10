@@ -1,3 +1,6 @@
+### 1.4.7
+- added Adventure Backpacks API to check backpack inventory for teleportability
+
 ### 1.4.6
 - deep north update
 - updated server sync

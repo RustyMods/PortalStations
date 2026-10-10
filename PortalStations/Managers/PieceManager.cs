@@ -17,7 +17,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
-
+#nullable enable
 namespace PieceManager;
 
 [PublicAPI]

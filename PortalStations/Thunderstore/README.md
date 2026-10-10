@@ -48,3 +48,7 @@ If you enjoy this mod and want to support me:
 <img src="https://i.imgur.com/rbNygUc.png" alt="" width="150">
 <img src="https://i.imgur.com/VZfZR0k.png" alt="https://www.buymeacoffee.com/peimalcolm2" width="150">
 </span>
+
+## Need a dedicated server ?
+- Use this link: https://www.survivalservers.com/r/rustymods/valheim
+- I'll get a 20% commission. Thanks.
